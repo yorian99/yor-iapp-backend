@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Yor.iAPP</title>
+    <title>Yor.iAPP - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -103,13 +103,13 @@
     </footer>
 
     <script>
-        const API_URL = ''; // kosong karena relative, atau isi dengan base url
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwCgn1S5lGbeDFe5_uqTyXWyqk0bhcqvmRELOj1eQFijiibyuez2GPi1V1vidxIWK86/exec';
 
         window.onload = function() {
-            if(localStorage.getItem('token')) {
+            if(localStorage.getItem('yori_user_email')) {
                 window.location.href = '/dashboard.html';
             }
-        }
+        };
 
         function toggleForm(formType) {
             document.getElementById('loginFormContainer').classList.toggle('hidden', formType === 'register');
@@ -130,20 +130,26 @@
             const email = document.getElementById('logEmail').value;
             const password = document.getElementById('logPassword').value;
             showLoader("Mengautentikasi...");
+
             try {
-                const res = await fetch('/api/auth/login', {
+                // Panggil fungsi loginUser di GAS
+                const response = await fetch(GAS_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'loginUser',
+                        email: email,
+                        password: password
+                    })
                 });
-                const data = await res.json();
+                const result = await response.json();
                 hideLoader();
-                if(data.success) {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('userEmail', data.user.email);
+                if(result.success) {
+                    localStorage.setItem('yori_user_email', result.user.email);
                     window.location.href = '/dashboard.html';
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: result.message });
                 }
             } catch(err) {
                 hideLoader();
@@ -157,26 +163,34 @@
             const email = document.getElementById('regEmail').value;
             const password = document.getElementById('regPassword').value;
             const confirm = document.getElementById('regConfirmPassword').value;
+
             if(password !== confirm) {
                 Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Password dan Konfirmasi tidak cocok!' });
                 return;
             }
+
             showLoader("Mendaftarkan akun...");
             try {
-                const res = await fetch('/api/auth/register', {
+                const response = await fetch(GAS_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'registerUser',
+                        username: username,
+                        email: email,
+                        password: password
+                    })
                 });
-                const data = await res.json();
+                const result = await response.json();
                 hideLoader();
-                if(data.success) {
-                    Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message }).then(() => {
+                if(result.success) {
+                    Swal.fire({ icon: 'success', title: 'Berhasil', text: result.message }).then(() => {
                         document.getElementById('registerForm').reset();
                         toggleForm('login');
                     });
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: result.message });
                 }
             } catch(err) {
                 hideLoader();
