@@ -7,11 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <!-- Library Cropper.js untuk Pemotongan Gambar -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    
     <style>
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
         .modal-fade { animation: modalFade 0.3s ease-out; }
@@ -21,8 +18,6 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
         .cropper-view-box, .cropper-face { border-radius: 50%; }
     </style>
 </head>
@@ -134,9 +129,7 @@
         </div>
     </main>
 
-    <!-- ================= MODALS ================= -->
-
-    <!-- Modal Crop Foto Profil -->
+    <!-- Modals -->
     <div id="modalCrop" class="fixed inset-0 bg-slate-900/80 z-[70] hidden flex flex-col items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm modal-fade overflow-hidden flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50">
@@ -155,7 +148,6 @@
         </div>
     </div>
 
-    <!-- Modal Upload -->
     <div id="modalUpload" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg modal-fade overflow-hidden flex flex-col max-h-[90vh]">
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
@@ -182,7 +174,6 @@
                             <select id="upYear" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></select>
                         </div>
                     </div>
-                    
                     <div id="uploadProgressContainer" class="hidden mb-4">
                         <div class="flex justify-between text-xs mb-1 font-medium text-slate-600">
                             <span>Mengunggah...</span>
@@ -192,7 +183,6 @@
                             <div id="uploadProgressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                         </div>
                     </div>
-
                     <button type="submit" id="btnUpload" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">
                         Simpan Arsip
                     </button>
@@ -201,7 +191,6 @@
         </div>
     </div>
 
-    <!-- Modal Edit -->
     <div id="modalEdit" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md modal-fade overflow-hidden">
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
@@ -231,7 +220,6 @@
         </div>
     </div>
 
-    <!-- Modal Add Category -->
     <div id="modalAddCategory" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm modal-fade overflow-hidden">
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
@@ -252,7 +240,6 @@
         </div>
     </div>
 
-    <!-- Modal Preview Locked -->
     <div id="modalPreview" class="fixed inset-0 bg-slate-900 z-[60] hidden flex flex-col">
         <div class="bg-slate-800 text-white p-4 flex justify-between items-center shadow-md">
             <h3 id="previewTitle" class="font-medium truncate pr-4"><i class="fas fa-eye mr-2"></i> Preview Arsip</h3>
@@ -264,37 +251,27 @@
             <div id="previewLoader" class="absolute inset-0 flex items-center justify-center bg-white z-10">
                 <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
             </div>
-            
-            <!-- ATRIBUT SANDBOX: Ini mematikan fungsi buka tab baru/pop-up milik Google Drive -->
             <iframe id="previewFrame" src="" class="w-full h-full border-0" sandbox="allow-scripts allow-same-origin allow-forms" onload="document.getElementById('previewLoader').classList.add('hidden')"></iframe>
-            
         </div>
     </div>
 
     <script>
-        // Ganti dengan URL web app Google Apps Script Anda
-        const API_BASE_URL = "https://script.google.com/macros/s/AKfycbwCgn1S5lGbeDFe5_uqTyXWyqk0bhcqvmRELOj1eQFijiibyuez2GPi1V1vidxIWK86/exec"; // <-- ganti!
-
+        const API_BASE_URL = "https://script.google.com/macros/s/AKfycbwCgn1S5lGbeDFe5_uqTyXWyqk0bhcqvmRELOj1eQFijiibyuez2GPi1V1vidxIWK86/exec";
         let userEmail = localStorage.getItem('yori_user_email');
         let globalCategories = [];
         let globalArchives = [];
         let currentFilter = 'All';
         let isActivated = true; 
-        let cropperInstance = null; 
+        let cropperInstance = null;
 
-        // Helper untuk memanggil API
         async function callApi(action, data = {}) {
-            try {
-                const response = await fetch(API_BASE_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action, ...data })
-                });
-                return await response.json();
-            } catch (err) {
-                console.error('API call failed:', err);
-                throw err;
-            }
+            const response = await fetch(API_BASE_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...data })
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
         }
 
         window.onload = async function() {
@@ -302,36 +279,28 @@
                 window.location.href = "login.html";
                 return;
             }
-            
             let currentYear = new Date().getFullYear();
             let yearOptions = "";
-            for(let i = currentYear; i >= currentYear - 20; i--) { yearOptions += `<option value="${i}">${i}</option>`; }
+            for(let i = currentYear; i >= currentYear - 20; i--) yearOptions += `<option value="${i}">${i}</option>`;
             document.getElementById('upYear').innerHTML = yearOptions;
             document.getElementById('editYear').innerHTML = yearOptions;
-
             document.getElementById('upFile').addEventListener('change', function(e) {
                 if(this.files[0]) {
                     let name = this.files[0].name.split('.').slice(0, -1).join('.');
-                    if(!document.getElementById('upName').value) {
-                        document.getElementById('upName').value = name;
-                    }
+                    if(!document.getElementById('upName').value) document.getElementById('upName').value = name;
                 }
             });
-
             await loadInitialData();
         };
 
         async function loadInitialData() {
             document.getElementById('dataLoader').classList.remove('hidden');
-            
             try {
                 const profile = await callApi('getUserProfile', { email: userEmail });
                 if(profile) {
                     document.getElementById('userName').innerText = profile.username;
                     document.getElementById('userEmail').innerText = profile.email;
-                    if(profile.pic && profile.pic.startsWith('data:image')) {
-                        document.getElementById('profileImg').src = profile.pic;
-                    }
+                    if(profile.pic && profile.pic.startsWith('data:image')) document.getElementById('profileImg').src = profile.pic;
                     if(!profile.status || profile.status.toString().trim() === '') {
                         isActivated = false;
                         document.getElementById('activationWarning').classList.remove('hidden');
@@ -339,21 +308,17 @@
                         document.getElementById('btnOpenUpload').classList.remove('hover:bg-blue-700', 'bg-blue-600');
                         document.getElementById('btnOpenCategory').classList.add('opacity-50', 'cursor-not-allowed');
                         document.getElementById('btnOpenCategory').classList.remove('hover:bg-blue-50');
-                    } else {
-                        isActivated = true;
-                    }
+                    } else isActivated = true;
                 }
-
-                const categories = await callApi('getCategories', { email: userEmail });
-                globalCategories = categories;
+                const cats = await callApi('getCategories', { email: userEmail });
+                globalCategories = cats;
                 renderCategoryMenu();
                 updateCategorySelects();
-
-                const archives = await callApi('getArchives', { email: userEmail });
-                globalArchives = archives;
+                const arcs = await callApi('getArchives', { email: userEmail });
+                globalArchives = arcs;
                 renderTable();
-            } catch (err) {
-                Swal.fire('Error', 'Gagal memuat data.', 'error');
+            } catch(err) {
+                Swal.fire('Error', 'Gagal memuat data: ' + err.message, 'error');
             } finally {
                 document.getElementById('dataLoader').classList.add('hidden');
             }
@@ -392,7 +357,7 @@
 
         function getFileIcon(fileName) {
             const ext = fileName.split('.').pop().toLowerCase();
-            if(['pdf'].includes(ext)) return '<i class="fas fa-file-pdf text-red-500 text-2xl"></i>';
+            if(ext === 'pdf') return '<i class="fas fa-file-pdf text-red-500 text-2xl"></i>';
             if(['jpg','jpeg','png','gif'].includes(ext)) return '<i class="fas fa-file-image text-blue-500 text-2xl"></i>';
             if(['doc','docx'].includes(ext)) return '<i class="fas fa-file-word text-blue-700 text-2xl"></i>';
             return '<i class="fas fa-file-alt text-slate-500 text-2xl"></i>';
@@ -402,229 +367,167 @@
             let tbody = document.getElementById('tableBody');
             let emptyState = document.getElementById('emptyState');
             let filtered = currentFilter === 'All' ? globalArchives : globalArchives.filter(a => a.category === currentFilter);
-            
             if(filtered.length === 0) {
                 tbody.innerHTML = ''; emptyState.classList.remove('hidden'); emptyState.classList.add('flex');
             } else {
                 emptyState.classList.add('hidden'); emptyState.classList.remove('flex');
                 let html = '';
                 filtered.forEach(item => {
-                    html += `
-                    <tr class="hover:bg-slate-50 transition-colors group">
+                    html += `<tr class="hover:bg-slate-50 transition-colors group">
                         <td class="p-4"><div class="flex items-center gap-3">${getFileIcon(item.fileName)}<div class="font-medium text-slate-800 truncate max-w-[150px] sm:max-w-xs" title="${item.fileName}">${item.fileName}</div></div></td>
                         <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-xs font-medium border border-slate-200">${item.category}</span></td>
                         <td class="p-4 text-slate-600">${item.year}</td>
                         <td class="p-4 text-slate-500 text-sm">${item.date}</td>
                         <td class="p-4 text-right">
                             <div class="flex justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="openPreview('${item.previewUrl}', '${item.fileName}')" class="w-8 h-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center" title="Preview"><i class="fas fa-eye"></i></button>
-                                <a href="${item.downloadUrl}" target="_blank" class="w-8 h-8 rounded bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors flex items-center justify-center" title="Download"><i class="fas fa-download"></i></a>
-                                <button onclick="openEdit(${item.rowIndex}, '${item.fileName}', '${item.category}', '${item.year}')" class="w-8 h-8 rounded bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white transition-colors flex items-center justify-center" title="Edit"><i class="fas fa-edit"></i></button>
-                                <button onclick="handleDelete('${item.id}', ${item.rowIndex})" class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus"><i class="fas fa-trash-alt"></i></button>
+                                <button onclick="openPreview('${item.previewUrl}', '${item.fileName}')" class="w-8 h-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-eye"></i></button>
+                                <a href="${item.downloadUrl}" target="_blank" class="w-8 h-8 rounded bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-download"></i></a>
+                                <button onclick="openEdit(${item.rowIndex}, '${item.fileName}', '${item.category}', '${item.year}')" class="w-8 h-8 rounded bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-edit"></i></button>
+                                <button onclick="handleDelete('${item.id}', ${item.rowIndex})" class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </td>
-                    </tr>`;
+                     </tr>`;
                 });
                 tbody.innerHTML = html;
             }
         }
 
-        // --- CROPPER FOTO PROFIL ---
         function handlePPSelection(e) {
             let file = e.target.files[0];
             if(!file) return;
-
             if (!file.type.match('image.*')) { Swal.fire('Error', 'Harap pilih file gambar (JPG/PNG).', 'error'); return; }
-
             let reader = new FileReader();
             reader.onload = function(ev) {
                 document.getElementById('imageToCrop').src = ev.target.result;
                 openModal('modalCrop');
-                
-                if(cropperInstance) { cropperInstance.destroy(); }
+                if(cropperInstance) cropperInstance.destroy();
                 let image = document.getElementById('imageToCrop');
-                cropperInstance = new Cropper(image, { aspectRatio: 1, viewMode: 1, dragMode: 'move', autoCropArea: 0.9, restore: false, guides: false, center: false, highlight: false, cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false, });
+                cropperInstance = new Cropper(image, { aspectRatio: 1, viewMode: 1, dragMode: 'move', autoCropArea: 0.9, restore: false, guides: false, center: false, highlight: false, cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false });
             };
             reader.readAsDataURL(file);
-            e.target.value = ''; 
+            e.target.value = '';
         }
 
         async function processCropAndUpload() {
             if(!cropperInstance) return;
-            
             let btn = document.getElementById('btnSaveCrop');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
             btn.disabled = true;
-
             let canvas = cropperInstance.getCroppedCanvas({ width: 200, height: 200 });
-            let dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
-            
+            let dataUrl = canvas.toDataURL('image/jpeg', 0.7);
             closeModal('modalCrop');
             document.getElementById('profileImg').src = 'https://i.gifer.com/ZKZg.gif';
-
             try {
                 const res = await callApi('uploadProfilePic', { email: userEmail, dataUrl });
                 if(res.success) {
                     document.getElementById('profileImg').src = res.url;
                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Foto diperbarui', showConfirmButton: false, timer: 1500 });
-                } else {
-                    Swal.fire('Gagal', res.message, 'error');
-                }
-            } catch (err) {
-                Swal.fire('Error', 'Gagal mengunggah foto.', 'error');
-            } finally {
-                btn.innerHTML = '<i class="fas fa-check"></i> Simpan';
-                btn.disabled = false;
-            }
+                } else Swal.fire('Gagal', res.message, 'error');
+            } catch(err) { Swal.fire('Error', 'Gagal mengunggah foto.', 'error');
+            } finally { btn.innerHTML = '<i class="fas fa-check"></i> Simpan'; btn.disabled = false; }
         }
 
         async function handleUpload(e) {
             e.preventDefault();
-            const fileInput = document.getElementById('upFile'); const file = fileInput.files[0];
+            const fileInput = document.getElementById('upFile');
+            const file = fileInput.files[0];
             if(!file) return;
-            if(file.size > 5 * 1024 * 1024) { Swal.fire('Terlalu Besar', 'Maksimal ukuran file adalah 5MB untuk stabilitas sistem.', 'warning'); return; }
-
-            const btn = document.getElementById('btnUpload'); const progressContainer = document.getElementById('uploadProgressContainer');
-            const progressBar = document.getElementById('uploadProgressBar'); const percentText = document.getElementById('uploadPercent');
-            
+            if(file.size > 5 * 1024 * 1024) { Swal.fire('Terlalu Besar', 'Maksimal ukuran file adalah 5MB.', 'warning'); return; }
+            const btn = document.getElementById('btnUpload');
+            const progressContainer = document.getElementById('uploadProgressContainer');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const percentText = document.getElementById('uploadPercent');
             btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...'; progressContainer.classList.remove('hidden');
-
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const data = { 
-                    action: 'uploadArchive',
-                    email: userEmail, 
-                    fileName: file.name, 
-                    customName: document.getElementById('upName').value, 
-                    mimeType: file.type, 
-                    base64: e.target.result.split(',')[1], 
-                    category: document.getElementById('upCategory').value, 
-                    year: document.getElementById('upYear').value 
-                };
-                let p = 0; let interval = setInterval(() => { p += Math.floor(Math.random()*10); if(p>90)p=90; progressBar.style.width = p+'%'; percentText.innerText = p+'%'; }, 300);
-
+                const data = { email: userEmail, fileName: file.name, customName: document.getElementById('upName').value, mimeType: file.type, base64: e.target.result.split(',')[1], category: document.getElementById('upCategory').value, year: document.getElementById('upYear').value };
+                let p = 0; let interval = setInterval(() => { p += Math.floor(Math.random()*10); if(p>90) p=90; progressBar.style.width = p+'%'; percentText.innerText = p+'%'; }, 300);
                 try {
                     const res = await callApi('uploadArchive', data);
                     clearInterval(interval); progressBar.style.width = '100%'; percentText.innerText = '100%';
                     setTimeout(() => {
-                        if(res.success) { Swal.fire('Berhasil', 'Arsip tersimpan.', 'success'); closeModal('modalUpload'); document.getElementById('uploadForm').reset(); loadInitialData(); 
-                        } else { Swal.fire('Gagal', res.message, 'error'); } 
+                        if(res.success) { Swal.fire('Berhasil', 'Arsip tersimpan.', 'success'); closeModal('modalUpload'); document.getElementById('uploadForm').reset(); loadInitialData(); }
+                        else Swal.fire('Gagal', res.message, 'error');
                         resetUploadUI();
                     }, 500);
-                } catch(err) {
-                    clearInterval(interval);
-                    resetUploadUI();
-                    Swal.fire('Error', 'Gagal menghubungi server.', 'error');
-                }
+                } catch(err) { clearInterval(interval); resetUploadUI(); Swal.fire('Error', 'Gagal menghubungi server.', 'error'); }
             };
             reader.readAsDataURL(file);
-
             function resetUploadUI() { btn.disabled = false; btn.innerText = 'Simpan Arsip'; progressContainer.classList.add('hidden'); progressBar.style.width = '0%'; }
         }
 
         async function handleAddCategory(e) {
             e.preventDefault();
-            let name = document.getElementById('newCategoryName').value; 
-            let btn = document.getElementById('btnKategori'); 
+            let name = document.getElementById('newCategoryName').value;
+            let btn = document.getElementById('btnKategori');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
             try {
                 const res = await callApi('addCategory', { email: userEmail, categoryName: name });
-                if(res.success) { 
-                    globalCategories.push({id: res.id, name: res.name}); 
-                    updateCategorySelects(); 
-                    renderCategoryMenu(); 
-                    closeModal('modalAddCategory'); 
-                    document.getElementById('newCategoryName').value = ''; 
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Kategori ditambahkan', showConfirmButton: false, timer: 1500 }); 
+                if(res.success) {
+                    globalCategories.push({id: res.id, name: res.name});
+                    updateCategorySelects();
+                    renderCategoryMenu();
+                    closeModal('modalAddCategory');
+                    document.getElementById('newCategoryName').value = '';
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Kategori ditambahkan', showConfirmButton: false, timer: 1500 });
                 }
-            } catch(err) {
-                Swal.fire('Error', 'Gagal menambah kategori.', 'error');
-            } finally {
-                btn.innerText = 'Simpan';
-            }
+            } catch(err) { Swal.fire('Error', 'Gagal menambah kategori.', 'error');
+            } finally { btn.innerText = 'Simpan'; }
         }
 
         function openEdit(rowIndex, name, category, year) {
             if(!isActivated) { Swal.fire({icon: 'warning', title: 'Akses Ditolak', text: 'Akun Belum Diaktivasi. Silakan Hubungi Admin.'}); return; }
-            document.getElementById('editRowIndex').value = rowIndex; 
-            document.getElementById('editName').value = name; 
-            document.getElementById('editCategory').value = category; 
-            document.getElementById('editYear').value = year; 
+            document.getElementById('editRowIndex').value = rowIndex;
+            document.getElementById('editName').value = name;
+            document.getElementById('editCategory').value = category;
+            document.getElementById('editYear').value = year;
             openModal('modalEdit');
         }
 
         async function handleEdit(e) {
-            e.preventDefault(); 
-            let btn = document.getElementById('btnEdit'); 
+            e.preventDefault();
+            let btn = document.getElementById('btnEdit');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengupdate...';
-            let data = { 
-                fileName: document.getElementById('editName').value, 
-                category: document.getElementById('editCategory').value, 
-                year: document.getElementById('editYear').value 
-            };
+            let data = { fileName: document.getElementById('editName').value, category: document.getElementById('editCategory').value, year: document.getElementById('editYear').value };
             let rowIndex = document.getElementById('editRowIndex').value;
             try {
                 const res = await callApi('updateArchive', { rowIndex, data });
-                if(res.success) {
-                    closeModal('modalEdit'); 
-                    loadInitialData(); 
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Diupdate', showConfirmButton: false, timer: 1500 });
-                }
-            } catch(err) {
-                Swal.fire('Error', 'Gagal mengupdate.', 'error');
-            } finally {
-                btn.innerText = 'Update Data';
-            }
+                if(res.success) { closeModal('modalEdit'); loadInitialData(); Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Diupdate', showConfirmButton: false, timer: 1500 }); }
+            } catch(err) { Swal.fire('Error', 'Gagal mengupdate.', 'error');
+            } finally { btn.innerText = 'Update Data'; }
         }
 
         async function handleDelete(id, rowIndex) {
             if(!isActivated) { Swal.fire({icon: 'warning', title: 'Akses Ditolak', text: 'Akun Belum Diaktivasi. Silakan Hubungi Admin.'}); return; }
-            Swal.fire({ title: 'Hapus Arsip?', text: "File akan dihapus dari sistem!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#cbd5e1', confirmButtonText: 'Ya, Hapus!'
-            }).then(async (result) => {
+            Swal.fire({ title: 'Hapus Arsip?', text: "File akan dihapus dari sistem!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#cbd5e1', confirmButtonText: 'Ya, Hapus!' }).then(async (result) => {
                 if (result.isConfirmed) {
                     document.getElementById('dataLoader').classList.remove('hidden');
                     try {
                         const res = await callApi('deleteArchive', { fileId: id, rowIndex });
-                        if(res.success) { 
-                            loadInitialData(); 
-                            Swal.fire('Terhapus!', 'Arsip telah dihapus.', 'success'); 
-                        } else { 
-                            document.getElementById('dataLoader').classList.add('hidden'); 
-                            Swal.fire('Gagal', res.message, 'error'); 
-                        }
-                    } catch(err) {
-                        document.getElementById('dataLoader').classList.add('hidden');
-                        Swal.fire('Error', 'Gagal menghapus.', 'error');
-                    }
+                        if(res.success) { loadInitialData(); Swal.fire('Terhapus!', 'Arsip telah dihapus.', 'success'); }
+                        else { document.getElementById('dataLoader').classList.add('hidden'); Swal.fire('Gagal', res.message, 'error'); }
+                    } catch(err) { document.getElementById('dataLoader').classList.add('hidden'); Swal.fire('Error', 'Gagal menghapus.', 'error'); }
                 }
             });
         }
 
-        function toggleSidebar() { 
-            const sb = document.getElementById('sidebar'); 
-            const overlay = document.getElementById('sidebarOverlay'); 
-            if(sb.classList.contains('-translate-x-full')) { 
-                sb.classList.remove('-translate-x-full'); 
-                overlay.classList.remove('hidden'); 
-            } else { 
-                sb.classList.add('-translate-x-full'); 
-                overlay.classList.add('hidden'); 
-            } 
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if(sb.classList.contains('-translate-x-full')) { sb.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+            else { sb.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
         }
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); if(id === 'modalPreview') document.getElementById('previewFrame').src = ''; }
-
         function openPreview(url, title) {
             document.getElementById('previewTitle').innerHTML = `<i class="fas fa-eye mr-2"></i> ${title}`;
             document.getElementById('previewLoader').classList.remove('hidden');
             document.getElementById('previewFrame').src = url;
             openModal('modalPreview');
         }
-
         function logout() {
-            Swal.fire({ title: 'Keluar?', text: "Sesi anda akan diakhiri.", icon: 'question', showCancelButton: true, confirmButtonColor: '#3b82f6', confirmButtonText: 'Ya, Keluar'
-            }).then((result) => { if (result.isConfirmed) { localStorage.removeItem('yori_user_email'); window.location.href = "login.html"; } });
+            Swal.fire({ title: 'Keluar?', text: "Sesi anda akan diakhiri.", icon: 'question', showCancelButton: true, confirmButtonColor: '#3b82f6', confirmButtonText: 'Ya, Keluar' }).then((result) => { if (result.isConfirmed) { localStorage.removeItem('yori_user_email'); window.location.href = "login.html"; } });
         }
     </script>
 </body>
