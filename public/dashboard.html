@@ -114,10 +114,10 @@
                                 <th class="p-4 font-medium">Tahun</th>
                                 <th class="p-4 font-medium">Tgl Upload</th>
                                 <th class="p-4 font-medium text-right">Aksi</th>
-                            </tr>
+                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
-                    </table>
+                     </table>
                 </div>
                 <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center">
                     <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-300">
@@ -210,7 +210,7 @@
             </div>
             <div class="p-6">
                 <form id="editForm" onsubmit="handleEdit(event)">
-                    <input type="hidden" id="editArchiveId">
+                    <input type="hidden" id="editRowIndex">
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-1">Nama Arsip</label>
                         <input type="text" id="editName" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none">
@@ -252,7 +252,7 @@
         </div>
     </div>
 
-    <!-- Modal Preview -->
+    <!-- Modal Preview Locked -->
     <div id="modalPreview" class="fixed inset-0 bg-slate-900 z-[60] hidden flex flex-col">
         <div class="bg-slate-800 text-white p-4 flex justify-between items-center shadow-md">
             <h3 id="previewTitle" class="font-medium truncate pr-4"><i class="fas fa-eye mr-2"></i> Preview Arsip</h3>
@@ -264,57 +264,45 @@
             <div id="previewLoader" class="absolute inset-0 flex items-center justify-center bg-white z-10">
                 <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
             </div>
+            
+            <!-- ATRIBUT SANDBOX: Ini mematikan fungsi buka tab baru/pop-up milik Google Drive -->
             <iframe id="previewFrame" src="" class="w-full h-full border-0" sandbox="allow-scripts allow-same-origin allow-forms" onload="document.getElementById('previewLoader').classList.add('hidden')"></iframe>
+            
         </div>
     </div>
 
     <script>
-        // ========== VARIABLES ==========
-        const API_BASE = ''; // relative
-        let token = localStorage.getItem('token');
-        let userEmail = localStorage.getItem('userEmail');
+        // Ganti dengan URL web app Google Apps Script Anda
+        const API_BASE_URL = "https://script.google.com/macros/s/AKfycbwCgn1S5lGbeDFe5_uqTyXWyqk0bhcqvmRELOj1eQFijiibyuez2GPi1V1vidxIWK86/exec"; // <-- ganti!
+
+        let userEmail = localStorage.getItem('yori_user_email');
         let globalCategories = [];
         let globalArchives = [];
         let currentFilter = 'All';
         let isActivated = true; 
         let cropperInstance = null; 
 
-        // ========== UTILITY ==========
-        async function fetchAPI(url, options = {}) {
-            const res = await fetch(url, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    ...options.headers,
-                }
-            });
-            if (!res.ok) {
-                if (res.status === 401) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userEmail');
-                    window.location.href = '/login.html';
-                }
-                throw new Error(await res.text());
+        // Helper untuk memanggil API
+        async function callApi(action, data = {}) {
+            try {
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, ...data })
+                });
+                return await response.json();
+            } catch (err) {
+                console.error('API call failed:', err);
+                throw err;
             }
-            return res.json();
         }
 
-        function showLoader(text) {
-            document.getElementById('dataLoader').classList.remove('hidden');
-        }
-        function hideLoader() {
-            document.getElementById('dataLoader').classList.add('hidden');
-        }
-
-        // ========== INIT ==========
-        window.onload = function() {
-            if(!token) {
-                window.location.href = '/login.html';
+        window.onload = async function() {
+            if(!userEmail) {
+                window.location.href = "login.html";
                 return;
             }
             
-            // Generate tahun untuk dropdown
             let currentYear = new Date().getFullYear();
             let yearOptions = "";
             for(let i = currentYear; i >= currentYear - 20; i--) { yearOptions += `<option value="${i}">${i}</option>`; }
@@ -330,43 +318,45 @@
                 }
             });
 
-            loadInitialData();
+            await loadInitialData();
         };
 
         async function loadInitialData() {
-            showLoader();
+            document.getElementById('dataLoader').classList.remove('hidden');
+            
             try {
-                // Profile
-                const profile = await fetchAPI('/api/user/profile');
-                document.getElementById('userName').innerText = profile.username;
-                document.getElementById('userEmail').innerText = profile.email;
-                if(profile.profilePic && profile.profilePic.startsWith('data:image')) {
-                    document.getElementById('profileImg').src = profile.profilePic;
-                }
-                if(!profile.status || profile.status.trim() === '') {
-                    isActivated = false;
-                    document.getElementById('activationWarning').classList.remove('hidden');
-                    document.getElementById('btnOpenUpload').classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-400');
-                    document.getElementById('btnOpenUpload').classList.remove('hover:bg-blue-700', 'bg-blue-600');
-                    document.getElementById('btnOpenCategory').classList.add('opacity-50', 'cursor-not-allowed');
-                    document.getElementById('btnOpenCategory').classList.remove('hover:bg-blue-50');
-                } else {
-                    isActivated = true;
+                const profile = await callApi('getUserProfile', { email: userEmail });
+                if(profile) {
+                    document.getElementById('userName').innerText = profile.username;
+                    document.getElementById('userEmail').innerText = profile.email;
+                    if(profile.pic && profile.pic.startsWith('data:image')) {
+                        document.getElementById('profileImg').src = profile.pic;
+                    }
+                    if(!profile.status || profile.status.toString().trim() === '') {
+                        isActivated = false;
+                        document.getElementById('activationWarning').classList.remove('hidden');
+                        document.getElementById('btnOpenUpload').classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-400');
+                        document.getElementById('btnOpenUpload').classList.remove('hover:bg-blue-700', 'bg-blue-600');
+                        document.getElementById('btnOpenCategory').classList.add('opacity-50', 'cursor-not-allowed');
+                        document.getElementById('btnOpenCategory').classList.remove('hover:bg-blue-50');
+                    } else {
+                        isActivated = true;
+                    }
                 }
 
-                // Categories
-                globalCategories = await fetchAPI('/api/categories');
+                const categories = await callApi('getCategories', { email: userEmail });
+                globalCategories = categories;
                 renderCategoryMenu();
                 updateCategorySelects();
 
-                // Archives
-                globalArchives = await fetchAPI('/api/archives');
+                const archives = await callApi('getArchives', { email: userEmail });
+                globalArchives = archives;
                 renderTable();
-            } catch(err) {
-                console.error(err);
-                Swal.fire('Error', 'Gagal memuat data', 'error');
+            } catch (err) {
+                Swal.fire('Error', 'Gagal memuat data.', 'error');
+            } finally {
+                document.getElementById('dataLoader').classList.add('hidden');
             }
-            hideLoader();
         }
 
         function checkActivationAndOpenModal(modalId) {
@@ -429,8 +419,8 @@
                             <div class="flex justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onclick="openPreview('${item.previewUrl}', '${item.fileName}')" class="w-8 h-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center" title="Preview"><i class="fas fa-eye"></i></button>
                                 <a href="${item.downloadUrl}" target="_blank" class="w-8 h-8 rounded bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors flex items-center justify-center" title="Download"><i class="fas fa-download"></i></a>
-                                <button onclick="openEdit('${item.id}', '${item.fileName}', '${item.category}', '${item.year}')" class="w-8 h-8 rounded bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white transition-colors flex items-center justify-center" title="Edit"><i class="fas fa-edit"></i></button>
-                                <button onclick="handleDelete('${item.id}')" class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus"><i class="fas fa-trash-alt"></i></button>
+                                <button onclick="openEdit(${item.rowIndex}, '${item.fileName}', '${item.category}', '${item.year}')" class="w-8 h-8 rounded bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white transition-colors flex items-center justify-center" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button onclick="handleDelete('${item.id}', ${item.rowIndex})" class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </td>
                     </tr>`;
@@ -443,12 +433,14 @@
         function handlePPSelection(e) {
             let file = e.target.files[0];
             if(!file) return;
+
             if (!file.type.match('image.*')) { Swal.fire('Error', 'Harap pilih file gambar (JPG/PNG).', 'error'); return; }
 
             let reader = new FileReader();
             reader.onload = function(ev) {
                 document.getElementById('imageToCrop').src = ev.target.result;
                 openModal('modalCrop');
+                
                 if(cropperInstance) { cropperInstance.destroy(); }
                 let image = document.getElementById('imageToCrop');
                 cropperInstance = new Cropper(image, { aspectRatio: 1, viewMode: 1, dragMode: 'move', autoCropArea: 0.9, restore: false, guides: false, center: false, highlight: false, cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false, });
@@ -459,35 +451,33 @@
 
         async function processCropAndUpload() {
             if(!cropperInstance) return;
+            
             let btn = document.getElementById('btnSaveCrop');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
             btn.disabled = true;
 
             let canvas = cropperInstance.getCroppedCanvas({ width: 200, height: 200 });
             let dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
+            
             closeModal('modalCrop');
             document.getElementById('profileImg').src = 'https://i.gifer.com/ZKZg.gif';
 
             try {
-                const res = await fetchAPI('/api/user/profile-pic', {
-                    method: 'POST',
-                    body: JSON.stringify({ dataUrl })
-                });
+                const res = await callApi('uploadProfilePic', { email: userEmail, dataUrl });
                 if(res.success) {
                     document.getElementById('profileImg').src = res.url;
                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Foto diperbarui', showConfirmButton: false, timer: 1500 });
                 } else {
                     Swal.fire('Gagal', res.message, 'error');
                 }
-            } catch(err) {
-                Swal.fire('Error', err.message, 'error');
+            } catch (err) {
+                Swal.fire('Error', 'Gagal mengunggah foto.', 'error');
             } finally {
                 btn.innerHTML = '<i class="fas fa-check"></i> Simpan';
                 btn.disabled = false;
             }
         }
 
-        // --- UPLOAD ---
         async function handleUpload(e) {
             e.preventDefault();
             const fileInput = document.getElementById('upFile'); const file = fileInput.files[0];
@@ -502,6 +492,8 @@
             const reader = new FileReader();
             reader.onload = async function(e) {
                 const data = { 
+                    action: 'uploadArchive',
+                    email: userEmail, 
                     fileName: file.name, 
                     customName: document.getElementById('upName').value, 
                     mimeType: file.type, 
@@ -512,66 +504,52 @@
                 let p = 0; let interval = setInterval(() => { p += Math.floor(Math.random()*10); if(p>90)p=90; progressBar.style.width = p+'%'; percentText.innerText = p+'%'; }, 300);
 
                 try {
-                    const res = await fetchAPI('/api/archives/upload', {
-                        method: 'POST',
-                        body: JSON.stringify(data)
-                    });
+                    const res = await callApi('uploadArchive', data);
                     clearInterval(interval); progressBar.style.width = '100%'; percentText.innerText = '100%';
-                    if(res.success) {
-                        Swal.fire('Berhasil', 'Arsip tersimpan.', 'success');
-                        closeModal('modalUpload');
-                        document.getElementById('uploadForm').reset();
-                        loadInitialData();
-                    } else {
-                        Swal.fire('Gagal', res.message, 'error');
-                    }
+                    setTimeout(() => {
+                        if(res.success) { Swal.fire('Berhasil', 'Arsip tersimpan.', 'success'); closeModal('modalUpload'); document.getElementById('uploadForm').reset(); loadInitialData(); 
+                        } else { Swal.fire('Gagal', res.message, 'error'); } 
+                        resetUploadUI();
+                    }, 500);
                 } catch(err) {
                     clearInterval(interval);
-                    Swal.fire('Error', err.message, 'error');
-                } finally {
-                    btn.disabled = false; btn.innerText = 'Simpan Arsip';
-                    progressContainer.classList.add('hidden');
-                    progressBar.style.width = '0%';
+                    resetUploadUI();
+                    Swal.fire('Error', 'Gagal menghubungi server.', 'error');
                 }
             };
             reader.readAsDataURL(file);
+
+            function resetUploadUI() { btn.disabled = false; btn.innerText = 'Simpan Arsip'; progressContainer.classList.add('hidden'); progressBar.style.width = '0%'; }
         }
 
-        // --- ADD CATEGORY ---
         async function handleAddCategory(e) {
             e.preventDefault();
             let name = document.getElementById('newCategoryName').value; 
             let btn = document.getElementById('btnKategori'); 
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
             try {
-                const res = await fetchAPI('/api/categories', {
-                    method: 'POST',
-                    body: JSON.stringify({ name })
-                });
-                if(res.success) {
-                    globalCategories.push({id: res.id, name: res.name});
-                    updateCategorySelects();
-                    renderCategoryMenu();
-                    closeModal('modalAddCategory');
-                    document.getElementById('newCategoryName').value = '';
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Kategori ditambahkan', showConfirmButton: false, timer: 1500 });
-                } else {
-                    Swal.fire('Gagal', res.message, 'error');
+                const res = await callApi('addCategory', { email: userEmail, categoryName: name });
+                if(res.success) { 
+                    globalCategories.push({id: res.id, name: res.name}); 
+                    updateCategorySelects(); 
+                    renderCategoryMenu(); 
+                    closeModal('modalAddCategory'); 
+                    document.getElementById('newCategoryName').value = ''; 
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Kategori ditambahkan', showConfirmButton: false, timer: 1500 }); 
                 }
             } catch(err) {
-                Swal.fire('Error', err.message, 'error');
+                Swal.fire('Error', 'Gagal menambah kategori.', 'error');
             } finally {
                 btn.innerText = 'Simpan';
             }
         }
 
-        // --- EDIT ---
-        function openEdit(id, name, category, year) {
+        function openEdit(rowIndex, name, category, year) {
             if(!isActivated) { Swal.fire({icon: 'warning', title: 'Akses Ditolak', text: 'Akun Belum Diaktivasi. Silakan Hubungi Admin.'}); return; }
-            document.getElementById('editArchiveId').value = id;
-            document.getElementById('editName').value = name;
-            document.getElementById('editCategory').value = category;
-            document.getElementById('editYear').value = year;
+            document.getElementById('editRowIndex').value = rowIndex; 
+            document.getElementById('editName').value = name; 
+            document.getElementById('editCategory').value = category; 
+            document.getElementById('editYear').value = year; 
             openModal('modalEdit');
         }
 
@@ -579,64 +557,49 @@
             e.preventDefault(); 
             let btn = document.getElementById('btnEdit'); 
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengupdate...';
-            let id = document.getElementById('editArchiveId').value;
             let data = { 
                 fileName: document.getElementById('editName').value, 
                 category: document.getElementById('editCategory').value, 
                 year: document.getElementById('editYear').value 
             };
+            let rowIndex = document.getElementById('editRowIndex').value;
             try {
-                const res = await fetchAPI(`/api/archives/${id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(data)
-                });
+                const res = await callApi('updateArchive', { rowIndex, data });
                 if(res.success) {
-                    closeModal('modalEdit');
-                    loadInitialData();
+                    closeModal('modalEdit'); 
+                    loadInitialData(); 
                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Diupdate', showConfirmButton: false, timer: 1500 });
-                } else {
-                    Swal.fire('Gagal', res.message, 'error');
                 }
             } catch(err) {
-                Swal.fire('Error', err.message, 'error');
+                Swal.fire('Error', 'Gagal mengupdate.', 'error');
             } finally {
                 btn.innerText = 'Update Data';
             }
         }
 
-        // --- DELETE ---
-        async function handleDelete(id) {
+        async function handleDelete(id, rowIndex) {
             if(!isActivated) { Swal.fire({icon: 'warning', title: 'Akses Ditolak', text: 'Akun Belum Diaktivasi. Silakan Hubungi Admin.'}); return; }
             Swal.fire({ title: 'Hapus Arsip?', text: "File akan dihapus dari sistem!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#cbd5e1', confirmButtonText: 'Ya, Hapus!'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    showLoader();
+                    document.getElementById('dataLoader').classList.remove('hidden');
                     try {
-                        const res = await fetchAPI(`/api/archives/${id}`, { method: 'DELETE' });
-                        if(res.success) {
-                            loadInitialData();
-                            Swal.fire('Terhapus!', 'Arsip telah dihapus.', 'success');
-                        } else {
-                            Swal.fire('Gagal', res.message, 'error');
+                        const res = await callApi('deleteArchive', { fileId: id, rowIndex });
+                        if(res.success) { 
+                            loadInitialData(); 
+                            Swal.fire('Terhapus!', 'Arsip telah dihapus.', 'success'); 
+                        } else { 
+                            document.getElementById('dataLoader').classList.add('hidden'); 
+                            Swal.fire('Gagal', res.message, 'error'); 
                         }
                     } catch(err) {
-                        Swal.fire('Error', err.message, 'error');
-                    } finally {
-                        hideLoader();
+                        document.getElementById('dataLoader').classList.add('hidden');
+                        Swal.fire('Error', 'Gagal menghapus.', 'error');
                     }
                 }
             });
         }
 
-        // --- PREVIEW ---
-        function openPreview(url, title) {
-            document.getElementById('previewTitle').innerHTML = `<i class="fas fa-eye mr-2"></i> ${title}`;
-            document.getElementById('previewLoader').classList.remove('hidden');
-            document.getElementById('previewFrame').src = url;
-            openModal('modalPreview');
-        }
-
-        // --- UI HELPERS ---
         function toggleSidebar() { 
             const sb = document.getElementById('sidebar'); 
             const overlay = document.getElementById('sidebarOverlay'); 
@@ -648,15 +611,20 @@
                 overlay.classList.add('hidden'); 
             } 
         }
+
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { 
-            document.getElementById(id).classList.add('hidden'); 
-            if(id === 'modalPreview') document.getElementById('previewFrame').src = ''; 
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); if(id === 'modalPreview') document.getElementById('previewFrame').src = ''; }
+
+        function openPreview(url, title) {
+            document.getElementById('previewTitle').innerHTML = `<i class="fas fa-eye mr-2"></i> ${title}`;
+            document.getElementById('previewLoader').classList.remove('hidden');
+            document.getElementById('previewFrame').src = url;
+            openModal('modalPreview');
         }
 
         function logout() {
             Swal.fire({ title: 'Keluar?', text: "Sesi anda akan diakhiri.", icon: 'question', showCancelButton: true, confirmButtonColor: '#3b82f6', confirmButtonText: 'Ya, Keluar'
-            }).then((result) => { if (result.isConfirmed) { localStorage.removeItem('token'); localStorage.removeItem('userEmail'); window.location.href = '/login.html'; } });
+            }).then((result) => { if (result.isConfirmed) { localStorage.removeItem('yori_user_email'); window.location.href = "login.html"; } });
         }
     </script>
 </body>
