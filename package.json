@@ -1,0 +1,24 @@
+{
+  "name": "yor-iapp-backend",
+  "version": "1.0.0",
+  "description": "Backend E-Arsip untuk Vercel",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "prisma generate",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@vercel/blob": "^0.17.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "@prisma/client": "^5.18.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.18.0"
+  }
+}
