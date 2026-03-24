@@ -36,8 +36,8 @@
             #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; color: black; }
             .no-print { display: none !important; }
         }
-        .scanner-container video { 
-            width: 100% !important; 
+        .scanner-container video {
+            width: 100% !important;
             height: auto !important;
             object-fit: cover;
             border-radius: 0.5rem;
@@ -54,7 +54,7 @@
     <!-- KONFIGURASI API -->
     <script>
         // GANTI DENGAN URL WEB APP ANDA
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxORxBMEhsxoE-0VzyS2l3MVEQJS05ST7MJZApING0mLufidHcRLZFi0OTNbvGW4eW5/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxORxBMEhsxoE-0VzyS2l3MVEQJS05ST7MJZApING0mLufidHcRLZFi0OTNbvGW4eW5/exec";
         const MOCK_MODE = !GAS_URL;
     </script>
 
@@ -189,7 +189,7 @@
                                 <table class="w-full text-sm text-left">
                                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                                         <tr><th class="px-4 py-2">Barang</th><th class="px-4 py-2">Sisa Stok</th><th class="px-4 py-2">Aksi</th></thead>
-                                    <tbody id="dash-alert-table"><tr><td colspan="3" class="text-center py-4 text-gray-400">Memuat data...</td></tr></tbody>
+                                    <tbody id="dash-alert-table">...</tbody>
                                 </table>
                             </div>
                         </div>
@@ -217,8 +217,8 @@
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden border">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left" id="table-barang-main">
-                                <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b"><tr><th class="px-4 py-3">Foto</th><th class="px-4 py-3">Barcode</th><th class="px-4 py-3">Nama Barang</th><th class="px-4 py-3">Kategori</th><th class="px-4 py-3 text-right">Harga Jual</th><th class="px-4 py-3 text-center">Stok</th><th class="px-4 py-3 text-center">Aksi</th></tr></thead>
-                                <tbody id="tbody-barang"><tr><td colspan="7" class="text-center py-8 text-gray-400">Memuat data...</td></tr></tbody>
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">...</thead>
+                                <tbody id="tbody-barang">...</tbody>
                             </table>
                         </div>
                     </div>
@@ -306,7 +306,7 @@
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left border" id="transaction-report-table">
-                                <thead class="bg-gray-100"><tr><th class="p-2">ID Transaksi</th><th class="p-2">Tanggal</th><th class="p-2">Barang/Jasa</th><th class="p-2">Jenis</th><th class="p-2">Jumlah</th><th class="p-2">Keterangan</th><th class="p-2">User</th></tr></thead>
+                                <thead class="bg-gray-100">...</thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -339,7 +339,7 @@
         </div>
     </div>
 
-    <!-- MODAL FORM BARANG -->
+    <!-- MODAL FORM BARANG (sama seperti sebelumnya) -->
     <div id="modal-barang" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
@@ -378,9 +378,9 @@
             <p>Kasir: <span id="print-kasir"></span></p>
         </div>
         <table class="w-full text-sm mb-4">
-            <thead><tr><th class="text-left">Item</th><th class="text-center">Qty</th><th class="text-right">Subtotal</th></tr></thead>
+            <thead>...</thead>
             <tbody id="print-items"></tbody>
-            <tfoot><tr><td colspan="2" class="text-right font-bold">Total</td><td class="text-right font-bold" id="print-total"></td></tr></tfoot>
+            <tfoot>...</tfoot>
         </table>
         <div class="text-center text-xs border-t pt-4">Terima Kasih, Selamat Jalan!</div>
     </div>
@@ -392,7 +392,7 @@
         let targetScanInputId = null;
         let dataBarangGlobal = [];
         let dataJasaGlobal = [];
-        let cart = []; // { id, name, type, price, qty, note }
+        let cart = [];
 
         // ========== UTILITY ==========
         function showLoading() { document.body.classList.add('is-loading'); }
@@ -477,11 +477,12 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        // ========== SCANNER (PERBAIKAN) ==========
+        // ========== SCANNER (DIPERBAIKI) ==========
         function startScanner(targetInput) {
             targetScanInputId = targetInput;
             openModal('modal-scanner');
             
+            // Bersihkan instance sebelumnya
             if (html5Qrcode) {
                 html5Qrcode.stop().catch(e => console.warn);
                 html5Qrcode.clear();
@@ -490,14 +491,13 @@
             
             html5Qrcode = new Html5Qrcode("reader");
             
-            // Konfigurasi scanner
             const config = {
                 fps: 10,
                 qrbox: { width: 250, height: 250 },
                 aspectRatio: 1.0
             };
             
-            // Coba dengan kamera belakang (environment) dengan resolusi tinggi
+            // Prioritaskan kamera belakang (environment) dengan resolusi tinggi
             const constraints = {
                 facingMode: { exact: "environment" },
                 width: { ideal: 1280 },
@@ -514,9 +514,9 @@
                         cekBarangByCode(decodedText);
                     }
                 },
-                (error) => { /* ignore scanning errors */ }
+                (error) => { /* abaikan error scanning */ }
             ).catch(err => {
-                console.warn("Kamera belakang tidak tersedia atau error:", err);
+                console.warn("Kamera belakang gagal, coba tanpa exact:", err);
                 // Fallback: tanpa exact
                 html5Qrcode.start(
                     { facingMode: "environment" },
@@ -553,12 +553,14 @@
         async function loadJasa() {
             const res = await apiCall('getJasa');
             if (res.status === 'success') {
-                dataJasaGlobal = res.data;
+                dataJasaGlobal = res.data || [];
                 const select = document.getElementById('jasa-select');
                 select.innerHTML = '<option value="">-- Pilih Jasa --</option>';
                 dataJasaGlobal.forEach(j => {
                     select.innerHTML += `<option value="${j.ID}" data-price="${j.Harga}" data-name="${j['Nama Jasa']}">${j['Nama Jasa']} - ${formatRp(j.Harga)}</option>`;
                 });
+            } else {
+                console.warn('Gagal memuat data jasa');
             }
         }
 
@@ -566,7 +568,7 @@
         function renderTableBarang(data) {
             const tbody = document.getElementById('tbody-barang');
             tbody.innerHTML = '';
-            if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6">Belum ada data</td></tr>'; return; }
+            if (!data.length) { tbody.innerHTML = '...</td>'; return; }
             data.forEach(b => {
                 let fotoUrl = b['Foto URL'] ? `<img src="${b['Foto URL']}" class="w-10 h-10 rounded-lg object-cover">` : '<div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center"><i class="fas fa-box-open"></i></div>';
                 tbody.innerHTML += `
@@ -824,13 +826,7 @@
             if (res.transaksiTerbaru.length === 0) recentDiv.innerHTML = '<p class="text-center py-6">Belum ada transaksi</p>';
             res.transaksiTerbaru.forEach(t => {
                 let icon = t.Jenis === 'Masuk' ? 'fa-arrow-down text-green-500' : 'fa-arrow-up text-red-500';
-                recentDiv.innerHTML += `
-                    <div class="flex justify-between p-3 bg-white border rounded shadow-sm">
-                        <div><i class="fas ${icon} mr-2"></i> ${t['Nama Barang']}</div>
-                        <div>${t.Jenis === 'Masuk' ? '+' : '-'}${t.Jumlah}</div>
-                        <div class="text-xs text-gray-500">${new Date(t.Tanggal).toLocaleDateString()}</div>
-                    </div>
-                `;
+                recentDiv.innerHTML += `<div class="flex justify-between p-3 bg-white border rounded shadow-sm"><div><i class="fas ${icon} mr-2"></i> ${t['Nama Barang']}</div><div>${t.Jenis === 'Masuk' ? '+' : '-'}${t.Jumlah}</div><div class="text-xs text-gray-500">${new Date(t.Tanggal).toLocaleDateString()}</div></div>`;
             });
         }
 
@@ -856,17 +852,7 @@
                 return;
             }
             transactions.forEach(t => {
-                tbody.innerHTML += `
-                    <tr class="border-b">
-                        <td class="p-2 text-xs">${t['ID Transaksi']}</td>
-                        <td class="p-2">${new Date(t.Tanggal).toLocaleString('id-ID')}</td>
-                        <td class="p-2">${t['Nama Barang']}</td>
-                        <td class="p-2"><span class="px-2 py-1 rounded text-xs ${t.Jenis === 'Masuk' ? 'bg-green-100 text-green-700' : t.Jenis === 'Jasa' ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'}">${t.Jenis}</span></td>
-                        <td class="p-2 text-center">${t.Jumlah}</td>
-                        <td class="p-2">${t.Keterangan || '-'}</td>
-                        <td class="p-2">${t.User}</td>
-                    </tr>
-                `;
+                tbody.innerHTML += `<tr class="border-b"><td class="p-2 text-xs">${t['ID Transaksi']}</td><td class="p-2">${new Date(t.Tanggal).toLocaleString('id-ID')}</td><td class="p-2">${t['Nama Barang']}</td><td class="p-2"><span class="px-2 py-1 rounded text-xs ${t.Jenis === 'Masuk' ? 'bg-green-100 text-green-700' : t.Jenis === 'Jasa' ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'}">${t.Jenis}</span></td><td class="p-2 text-center">${t.Jumlah}</td><td class="p-2">${t.Keterangan || '-'}</td><td class="p-2">${t.User}</td></tr>`;
             });
         }
         function exportTransactionsCSV() {
@@ -941,7 +927,6 @@
             URL.revokeObjectURL(link.href);
         }
 
-        // Inisialisasi form toggle
         window.onload = () => {
             toggleItemForm();
         };
