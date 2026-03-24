@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Yor.iAPP AutoStock - Sistem Manajemen</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -36,7 +36,12 @@
             #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; color: black; }
             .no-print { display: none !important; }
         }
-        .scanner-container video { width: 100% !important; border-radius: 0.5rem; }
+        .scanner-container video { 
+            width: 100% !important; 
+            height: auto !important;
+            object-fit: cover;
+            border-radius: 0.5rem;
+        }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         #loading-overlay { display: none; }
@@ -48,7 +53,7 @@
 
     <!-- KONFIGURASI API -->
     <script>
-        // Ganti dengan URL Web App Anda
+        // GANTI DENGAN URL WEB APP ANDA
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxORxBMEhsxoE-0VzyS2l3MVEQJS05ST7MJZApING0mLufidHcRLZFi0OTNbvGW4eW5/exec"; 
         const MOCK_MODE = !GAS_URL;
     </script>
@@ -183,8 +188,7 @@
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm text-left">
                                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                        <tr><th class="px-4 py-2">Barang</th><th class="px-4 py-2">Sisa Stok</th><th class="px-4 py-2">Aksi</th></tr>
-                                    </thead>
+                                        <tr><th class="px-4 py-2">Barang</th><th class="px-4 py-2">Sisa Stok</th><th class="px-4 py-2">Aksi</th></thead>
                                     <tbody id="dash-alert-table"><tr><td colspan="3" class="text-center py-4 text-gray-400">Memuat data...</td></tr></tbody>
                                 </table>
                             </div>
@@ -335,7 +339,7 @@
         </div>
     </div>
 
-    <!-- MODAL FORM BARANG (sama seperti sebelumnya) -->
+    <!-- MODAL FORM BARANG -->
     <div id="modal-barang" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
@@ -388,7 +392,7 @@
         let targetScanInputId = null;
         let dataBarangGlobal = [];
         let dataJasaGlobal = [];
-        let cart = []; // { id, name, type, price, qty, note, hargaJual? }
+        let cart = []; // { id, name, type, price, qty, note }
 
         // ========== UTILITY ==========
         function showLoading() { document.body.classList.add('is-loading'); }
@@ -431,8 +435,8 @@
                 document.getElementById('user-display-name').innerText = currentUser.nama;
                 document.getElementById('user-role').innerText = currentUser.role;
                 loadDashboard();
-                loadBarang(); // untuk data barang global
-                loadJasa();   // untuk data jasa
+                loadBarang();
+                loadJasa();
             } else {
                 Swal.fire('Login Gagal', res.message, 'error');
             }
@@ -473,29 +477,67 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        // ========== SCANNER ==========
+        // ========== SCANNER (PERBAIKAN) ==========
         function startScanner(targetInput) {
             targetScanInputId = targetInput;
             openModal('modal-scanner');
+            
             if (html5Qrcode) {
-                html5Qrcode.stop().catch(e=>{});
+                html5Qrcode.stop().catch(e => console.warn);
                 html5Qrcode.clear();
+                html5Qrcode = null;
             }
+            
             html5Qrcode = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            html5Qrcode.start({ facingMode: "environment" }, config, 
+            
+            // Konfigurasi scanner
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+            
+            // Coba dengan kamera belakang (environment) dengan resolusi tinggi
+            const constraints = {
+                facingMode: { exact: "environment" },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            };
+            
+            html5Qrcode.start(
+                constraints,
+                config,
                 (decodedText) => {
                     document.getElementById(targetScanInputId).value = decodedText;
                     stopScanner();
-                    if (targetScanInputId === 'item-code') cekBarangByCode(decodedText);
+                    if (targetScanInputId === 'item-code') {
+                        cekBarangByCode(decodedText);
+                    }
                 },
-                (error) => {}
-            ).catch(err => { console.error(err); Swal.fire('Akses kamera gagal', '', 'error'); stopScanner(); });
+                (error) => { /* ignore scanning errors */ }
+            ).catch(err => {
+                console.warn("Kamera belakang tidak tersedia atau error:", err);
+                // Fallback: tanpa exact
+                html5Qrcode.start(
+                    { facingMode: "environment" },
+                    config,
+                    (decodedText) => {
+                        document.getElementById(targetScanInputId).value = decodedText;
+                        stopScanner();
+                        if (targetScanInputId === 'item-code') cekBarangByCode(decodedText);
+                    },
+                    (error) => {}
+                ).catch(err2 => {
+                    console.error("Gagal mengakses kamera:", err2);
+                    Swal.fire('Akses kamera gagal', 'Pastikan browser mengizinkan akses kamera dan coba lagi', 'error');
+                    stopScanner();
+                });
+            });
         }
 
         function stopScanner() {
             if (html5Qrcode) {
-                html5Qrcode.stop().catch(e=>{});
+                html5Qrcode.stop().catch(e => console.warn);
                 html5Qrcode.clear();
                 html5Qrcode = null;
             }
@@ -548,9 +590,57 @@
             let filtered = dataBarangGlobal.filter(b => b['Nama Barang'].toLowerCase().includes(term) || (b.Barcode && b.Barcode.toLowerCase().includes(term)));
             renderTableBarang(filtered);
         }
-        function editBarang(item) { /* implementasi sama seperti sebelumnya */ }
-        function hapusBarang(id) { /* implementasi hapus */ }
-        async function saveBarang(e) { /* implementasi save */ }
+        function editBarang(item) {
+            document.getElementById('modal-barang-title').innerText = 'Edit Data Barang';
+            document.getElementById('form-id').value = item.ID;
+            document.getElementById('form-barcode').value = item.Barcode || '';
+            document.getElementById('form-nama').value = item['Nama Barang'];
+            document.getElementById('form-kategori').value = item.Kategori;
+            document.getElementById('form-supplier').value = item.Supplier || '';
+            document.getElementById('form-hargaModal').value = item['Harga Modal'];
+            document.getElementById('form-hargaJual').value = item['Harga Jual'];
+            document.getElementById('form-stok').value = item.Stok;
+            openModal('modal-barang');
+        }
+        async function hapusBarang(id) {
+            const confirm = await Swal.fire({ title: 'Hapus barang?', text: "Data akan dihapus permanen", icon: 'warning', showCancelButton: true });
+            if (confirm.isConfirmed) {
+                const res = await apiCall('deleteBarang', { id });
+                if (res.status === 'success') { Swal.fire('Terhapus', '', 'success'); loadBarang(); }
+                else Swal.fire('Gagal', res.message, 'error');
+            }
+        }
+        async function saveBarang(e) {
+            e.preventDefault();
+            const id = document.getElementById('form-id').value;
+            const fileInput = document.getElementById('form-foto');
+            let fotoBase64 = null;
+            if (fileInput.files.length > 0) {
+                if(fileInput.files[0].size > 2000000) { Swal.fire('Foto max 2MB', '', 'warning'); return; }
+                fotoBase64 = await getBase64(fileInput.files[0]);
+            }
+            const payload = {
+                id: id,
+                barcode: document.getElementById('form-barcode').value,
+                nama: document.getElementById('form-nama').value,
+                kategori: document.getElementById('form-kategori').value,
+                supplier: document.getElementById('form-supplier').value,
+                hargaModal: parseInt(document.getElementById('form-hargaModal').value),
+                hargaJual: parseInt(document.getElementById('form-hargaJual').value),
+                stok: parseInt(document.getElementById('form-stok').value),
+                fotoBase64: fotoBase64
+            };
+            const action = id ? 'updateBarang' : 'addBarang';
+            const res = await apiCall(action, payload);
+            if(res.status === 'success') {
+                Swal.fire('Sukses', '', 'success');
+                closeModal('modal-barang');
+                document.getElementById('form-add-barang').reset();
+                loadBarang();
+            } else {
+                Swal.fire('Gagal', res.message, 'error');
+            }
+        }
 
         // ========== KERANJANG ==========
         function toggleItemForm() {
@@ -580,10 +670,6 @@
             let qty = parseInt(document.getElementById('item-qty').value);
             if (qty <= 0) qty = 1;
             let note = document.getElementById('item-note').value;
-            // Cek stok jika jenis "Keluar" (dalam cart, kita simpan sebagai barang, nanti saat checkout akan diproses)
-            // Namun kita tidak tahu dulu apakah ini penjualan atau restock? Karena di transaksi kita akan menentukan jenis saat checkout?
-            // Untuk kemudahan, kita asumsikan semua penambahan barang ke keranjang adalah untuk penjualan (keluar). Restock bisa dilakukan melalui menu terpisah atau dengan memilih jenis.
-            // Karena permintaan awal adalah transaksi jual, kita akan buat semua barang di keranjang sebagai penjualan (keluar). Jika ingin restock, bisa diatur nanti.
             cart.push({
                 id: barang.ID,
                 name: barang['Nama Barang'],
@@ -664,7 +750,6 @@
 
         async function checkout() {
             if (cart.length === 0) { Swal.fire('Keranjang kosong', 'Tidak ada item untuk diproses', 'info'); return; }
-            // Proses setiap item ke backend
             showLoading();
             let successCount = 0;
             let errorMessages = [];
@@ -686,7 +771,6 @@
                 Swal.fire('Sebagian gagal', errorMessages.join('\n'), 'warning');
             }
             if (successCount > 0) {
-                // Cetak nota
                 let printData = {
                     id: 'TRX-' + new Date().getTime(),
                     tanggal: new Date().toISOString(),
@@ -695,10 +779,8 @@
                     total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0)
                 };
                 printNota(printData);
-                // Kosongkan keranjang
                 cart = [];
                 updateCartUI();
-                // Refresh data
                 loadDashboard();
                 loadBarang();
             }
@@ -714,7 +796,6 @@
             });
             document.getElementById('print-items').innerHTML = itemsHtml;
             document.getElementById('print-total').innerText = formatRp(data.total);
-            // Tampilkan area print
             document.getElementById('app-container').classList.add('no-print');
             document.getElementById('print-area').style.display = 'block';
             window.print();
@@ -732,14 +813,12 @@
             let nilaiAset = dataBarangGlobal.reduce((sum, b) => sum + (parseInt(b['Harga Jual']) * parseInt(b.Stok)), 0);
             document.getElementById('dash-nilai-aset').innerText = formatRp(nilaiAset);
             document.getElementById('dash-stok-habis').innerText = res.barangMenipis.length;
-            // render alert table
             const alertTable = document.getElementById('dash-alert-table');
             alertTable.innerHTML = '';
             if (res.barangMenipis.length === 0) alertTable.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-green-600">Semua stok aman</td></tr>';
             res.barangMenipis.forEach(b => {
                 alertTable.innerHTML += `<tr><td class="px-4 py-3">${b['Nama Barang']}</td><td class="px-4 py-3">${b.Stok}</td><td class="px-4 py-3"><button onclick="navigate('transaksi'); document.getElementById('item-code').value='${b.Barcode}'; cekBarangByCode('${b.Barcode}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs">Isi Stok</button></td></tr>`;
             });
-            // recent transaksi
             const recentDiv = document.getElementById('dash-recent-trx');
             recentDiv.innerHTML = '';
             if (res.transaksiTerbaru.length === 0) recentDiv.innerHTML = '<p class="text-center py-6">Belum ada transaksi</p>';
