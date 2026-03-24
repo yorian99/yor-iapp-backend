@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Ganti dengan URL web app GAS yang sudah dideploy
+  // URL GAS yang sudah dideploy
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbxORxBMEhsxoE-0VzyS2l3MVEQJS05ST7MJZApING0mLufidHcRLZFi0OTNbvGW4eW5/exec';
 
   try {
@@ -22,6 +22,7 @@ export default async function handler(req, res) {
     const data = await response.json();
     res.status(200).json(data);
   } catch (error) {
+    console.error('Proxy error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 }
