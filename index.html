@@ -55,7 +55,6 @@
     <script>
         // GANTI DENGAN URL WEB APP ANDA
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxORxBMEhsxoE-0VzyS2l3MVEQJS05ST7MJZApING0mLufidHcRLZFi0OTNbvGW4eW5/exec";
-        const MOCK_MODE = !GAS_URL;
     </script>
 
     <!-- Global Loading -->
@@ -188,8 +187,9 @@
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm text-left">
                                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                        <tr><th class="px-4 py-2">Barang</th><th class="px-4 py-2">Sisa Stok</th><th class="px-4 py-2">Aksi</th></thead>
-                                    <tbody id="dash-alert-table">...</tbody>
+                                         <tr><th class="px-4 py-2">Barang</th><th class="px-4 py-2">Sisa Stok</th><th class="px-4 py-2">Aksi</th></tr>
+                                    </thead>
+                                    <tbody id="dash-alert-table"><tr><td colspan="3" class="text-center py-4 text-gray-400">Memuat data...</td></tr></tbody>
                                 </table>
                             </div>
                         </div>
@@ -217,8 +217,10 @@
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden border">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left" id="table-barang-main">
-                                <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">...</thead>
-                                <tbody id="tbody-barang">...</tbody>
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
+                                    <tr><th class="px-4 py-3">Foto</th><th class="px-4 py-3">Barcode</th><th class="px-4 py-3">Nama Barang</th><th class="px-4 py-3">Kategori</th><th class="px-4 py-3 text-right">Harga Jual</th><th class="px-4 py-3 text-center">Stok</th><th class="px-4 py-3 text-center">Aksi</th></tr>
+                                </thead>
+                                <tbody id="tbody-barang"><tr><td colspan="7" class="text-center py-8 text-gray-400">Memuat data...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -259,10 +261,31 @@
                             </div>
                             <div id="jasa-form" class="hidden">
                                 <div class="mb-4">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Jasa</label>
-                                    <select id="jasa-select" class="w-full px-3 py-2 border rounded-lg">
-                                        <option value="">-- Pilih Jasa --</option>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Opsi Jasa</label>
+                                    <select id="jasa-mode" class="w-full px-3 py-2 border rounded-lg" onchange="toggleJasaMode()">
+                                        <option value="manual">Masukkan Manual</option>
+                                        <option value="list">Pilih dari Daftar</option>
                                     </select>
+                                </div>
+                                <!-- Manual Jasa -->
+                                <div id="jasa-manual">
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Jasa</label>
+                                        <input type="text" id="jasa-manual-name" class="w-full px-3 py-2 border rounded-lg" placeholder="Contoh: Servis Rutin">
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Harga Jasa (Rp)</label>
+                                        <input type="number" id="jasa-manual-price" class="w-full px-3 py-2 border rounded-lg" placeholder="0">
+                                    </div>
+                                </div>
+                                <!-- Pilih dari Daftar -->
+                                <div id="jasa-list" class="hidden">
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Jasa</label>
+                                        <select id="jasa-select" class="w-full px-3 py-2 border rounded-lg">
+                                            <option value="">-- Pilih Jasa --</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="mb-4">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah</label>
@@ -306,7 +329,7 @@
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left border" id="transaction-report-table">
-                                <thead class="bg-gray-100">...</thead>
+                                <thead class="bg-gray-100"><tr><th class="p-2">ID Transaksi</th><th class="p-2">Tanggal</th><th class="p-2">Barang/Jasa</th><th class="p-2">Jenis</th><th class="p-2">Jumlah</th><th class="p-2">Keterangan</th><th class="p-2">User</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -378,9 +401,9 @@
             <p>Kasir: <span id="print-kasir"></span></p>
         </div>
         <table class="w-full text-sm mb-4">
-            <thead>...</thead>
+            <thead><tr><th class="text-left">Item</th><th class="text-center">Qty</th><th class="text-right">Subtotal</th></tr></thead>
             <tbody id="print-items"></tbody>
-            <tfoot>...</tfoot>
+            <tfoot><tr><td colspan="2" class="text-right font-bold">Total</td><td class="text-right font-bold" id="print-total"></td></tr></tfoot>
         </table>
         <div class="text-center text-xs border-t pt-4">Terima Kasih, Selamat Jalan!</div>
     </div>
@@ -482,7 +505,6 @@
             targetScanInputId = targetInput;
             openModal('modal-scanner');
             
-            // Bersihkan instance sebelumnya
             if (html5Qrcode) {
                 html5Qrcode.stop().catch(e => console.warn);
                 html5Qrcode.clear();
@@ -490,36 +512,23 @@
             }
             
             html5Qrcode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
             
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            };
-            
-            // Prioritaskan kamera belakang (environment) dengan resolusi tinggi
-            const constraints = {
-                facingMode: { exact: "environment" },
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            };
-            
+            // Coba dengan kamera belakang (environment) tanpa exact agar lebih kompatibel
             html5Qrcode.start(
-                constraints,
+                { facingMode: "environment" },
                 config,
                 (decodedText) => {
                     document.getElementById(targetScanInputId).value = decodedText;
                     stopScanner();
-                    if (targetScanInputId === 'item-code') {
-                        cekBarangByCode(decodedText);
-                    }
+                    if (targetScanInputId === 'item-code') cekBarangByCode(decodedText);
                 },
-                (error) => { /* abaikan error scanning */ }
+                (error) => {}
             ).catch(err => {
-                console.warn("Kamera belakang gagal, coba tanpa exact:", err);
-                // Fallback: tanpa exact
+                console.warn("Kamera belakang gagal, coba kamera depan:", err);
+                // Fallback: kamera depan (user)
                 html5Qrcode.start(
-                    { facingMode: "environment" },
+                    { facingMode: "user" },
                     config,
                     (decodedText) => {
                         document.getElementById(targetScanInputId).value = decodedText;
@@ -568,7 +577,7 @@
         function renderTableBarang(data) {
             const tbody = document.getElementById('tbody-barang');
             tbody.innerHTML = '';
-            if (!data.length) { tbody.innerHTML = '...</td>'; return; }
+            if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6">Belum ada data</td></tr>'; return; }
             data.forEach(b => {
                 let fotoUrl = b['Foto URL'] ? `<img src="${b['Foto URL']}" class="w-10 h-10 rounded-lg object-cover">` : '<div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center"><i class="fas fa-box-open"></i></div>';
                 tbody.innerHTML += `
@@ -649,6 +658,13 @@
             const type = document.getElementById('item-type').value;
             document.getElementById('barang-form').classList.toggle('hidden', type !== 'barang');
             document.getElementById('jasa-form').classList.toggle('hidden', type !== 'jasa');
+            if (type === 'jasa') toggleJasaMode();
+        }
+
+        function toggleJasaMode() {
+            const mode = document.getElementById('jasa-mode').value;
+            document.getElementById('jasa-manual').classList.toggle('hidden', mode !== 'manual');
+            document.getElementById('jasa-list').classList.toggle('hidden', mode !== 'list');
         }
 
         function cekBarangByCode(code) {
@@ -689,23 +705,37 @@
         }
 
         function addJasaToCart() {
-            const select = document.getElementById('jasa-select');
-            const selectedOption = select.options[select.selectedIndex];
-            if (!selectedOption.value) { Swal.fire('Pilih jasa', '', 'info'); return; }
-            let jasa = dataJasaGlobal.find(j => j.ID === selectedOption.value);
-            if (!jasa) return;
+            const mode = document.getElementById('jasa-mode').value;
+            let name, price;
+            if (mode === 'manual') {
+                name = document.getElementById('jasa-manual-name').value.trim();
+                price = parseInt(document.getElementById('jasa-manual-price').value);
+                if (!name) { Swal.fire('Info', 'Masukkan nama jasa', 'info'); return; }
+                if (isNaN(price) || price <= 0) { Swal.fire('Info', 'Masukkan harga jasa yang valid', 'info'); return; }
+            } else {
+                const select = document.getElementById('jasa-select');
+                const selectedOption = select.options[select.selectedIndex];
+                if (!selectedOption.value) { Swal.fire('Pilih jasa', '', 'info'); return; }
+                let jasa = dataJasaGlobal.find(j => j.ID === selectedOption.value);
+                if (!jasa) return;
+                name = jasa['Nama Jasa'];
+                price = parseInt(jasa.Harga);
+            }
             let qty = parseInt(document.getElementById('jasa-qty').value);
             if (qty <= 0) qty = 1;
             let note = document.getElementById('jasa-note').value;
             cart.push({
-                id: jasa.ID,
-                name: jasa['Nama Jasa'],
+                id: null,
+                name: name,
                 type: 'jasa',
-                price: parseInt(jasa.Harga),
+                price: price,
                 qty: qty,
                 note: note
             });
             updateCartUI();
+            // Reset manual fields
+            document.getElementById('jasa-manual-name').value = '';
+            document.getElementById('jasa-manual-price').value = '';
             document.getElementById('jasa-select').selectedIndex = 0;
             document.getElementById('jasa-qty').value = 1;
             document.getElementById('jasa-note').value = '';
@@ -731,7 +761,7 @@
                 html += `
                     <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border cart-item">
                         <div class="flex-1">
-                            <div class="font-semibold">${item.name} <span class="text-xs text-gray-500">(${item.type})</span></div>
+                            <div class="font-semibold">${item.name} <span class="text-xs text-gray-500">(${item.type === 'barang' ? 'Barang' : 'Jasa'})</span></div>
                             <div class="text-sm text-gray-600">${formatRp(item.price)} x ${item.qty}</div>
                             ${item.note ? `<div class="text-xs text-gray-400">Catatan: ${item.note}</div>` : ''}
                         </div>
@@ -759,7 +789,7 @@
                 let payload = {
                     jenis: item.type === 'barang' ? 'Keluar' : 'Jasa',
                     idBarang: item.type === 'barang' ? item.id : null,
-                    idJasa: item.type === 'jasa' ? item.id : null,
+                    idJasa: null,
                     namaBarang: item.name,
                     jumlah: item.qty,
                     keterangan: item.note
@@ -929,6 +959,7 @@
 
         window.onload = () => {
             toggleItemForm();
+            toggleJasaMode();
         };
     </script>
 </body>
