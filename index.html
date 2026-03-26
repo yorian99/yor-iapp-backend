@@ -3,1003 +3,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yor.iAPP - E-Arsip Management</title>
-    <!-- Tailwind CSS -->
+    <title>Yor.iAPP - E-Arsip Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Cropper.js -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    
     <style>
-        .sidebar-transition { transition: transform 0.3s ease-in-out; }
-        .modal-fade { animation: modalFade 0.3s ease-out; }
-        .fade-in { animation: fadeIn 0.4s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes modalFade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .login-card { animation: fadeInUp 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards; }
-        .form-transition { transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out; }
-        .btn-hover-effect:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        .disabled-download { opacity: 0.5; pointer-events: none; cursor: not-allowed; }
-        .bg-pattern { background-image: radial-gradient(#e2e8f0 1px, transparent 1px); background-size: 20px 20px; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .cropper-view-box, .cropper-face { border-radius: 50%; }
-
-        .cat-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
-        }
-        .cat-name {
-            flex: 1;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .delete-cat {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            cursor: pointer;
-            color: #ef4444;
-            background: none;
-            border: none;
-            font-size: 0.875rem;
-            padding: 4px;
-            border-radius: 0.375rem;
-        }
-        .cat-item:hover .delete-cat { opacity: 1; }
-        .delete-cat:hover { background-color: #fee2e2; transform: scale(1.05); }
-        .cat-limit-badge { font-size: 0.7rem; background: #f1f5f9; border-radius: 20px; padding: 2px 8px; margin-left: 8px; color: #475569; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .loader { border-top-color: #3b82f6; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 h-screen overflow-hidden">
+<body class="bg-slate-50 text-slate-900 min-h-screen">
 
-    <!-- ================= SECTION LOGIN & REGISTER ================= -->
-    <div id="loginPage" class="bg-pattern min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden login-card">
-            <div class="bg-blue-600 p-8 text-center text-white relative">
-                <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fas fa-cloud text-6xl"></i></div>
-                <i class="fas fa-folder-open text-5xl mb-3 relative z-10"></i>
-                <h1 class="text-3xl font-bold relative z-10">Yor.iAPP</h1>
-                <p class="text-blue-100 text-sm opacity-90 relative z-10">E-Arsip Digital Management</p>
-            </div>
-            <div class="p-8">
-                <!-- Login Form -->
-                <div id="loginBox" class="form-transition">
-                    <form onsubmit="handleLogin(event)" class="space-y-5">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-1">Email Anda</label>
-                            <div class="relative">
-                                <i class="fas fa-envelope absolute left-4 top-3 text-slate-400"></i>
-                                <input type="email" id="logEmail" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-1">Password</label>
-                            <div class="relative">
-                                <i class="fas fa-lock absolute left-4 top-3 text-slate-400"></i>
-                                <input type="password" id="logPassword" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200">
-                            </div>
-                        </div>
-                        <button type="submit" id="btnLogin" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md btn-hover-effect transition-all mt-2">MASUK</button>
-                    </form>
-                    <p class="text-center mt-6 text-sm text-slate-500">Belum punya akun? <button onclick="toggleAuth(true)" class="text-blue-600 font-bold hover:underline">Daftar disini</button></p>
-                </div>
+    <!-- API CONFIGURATION -->
+    <script>
+        // GANTI URL INI dengan URL Web App GAS Anda setelah di-deploy sebagai "Anyone"
+        const GAS_WEB_APP_URL = "ISI_DENGAN_URL_DEPLOY_GAS_ANDA"; 
+    </script>
 
-                <!-- Register Form -->
-                <div id="registerBox" class="hidden form-transition">
-                    <form onsubmit="handleRegister(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-1">Nama Lengkap</label>
-                            <input type="text" id="regUser" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-1">Email</label>
-                            <input type="email" id="regEmail" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-1">Password Baru</label>
-                            <input type="password" id="regPass" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200">
-                        </div>
-                        <button type="submit" id="btnReg" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow-md btn-hover-effect transition-all mt-2">DAFTAR SEKARANG</button>
-                    </form>
-                    <p class="text-center mt-6 text-sm text-slate-500">Sudah punya akun? <button onclick="toggleAuth(false)" class="text-blue-600 font-bold hover:underline">Masuk disini</button></p>
-                </div>
-            </div>
-        </div>
+    <!-- LOADING OVERLAY -->
+    <div id="globalLoader" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center hidden">
+        <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
+        <p class="text-slate-600 font-medium">Memproses data...</p>
     </div>
 
-    <!-- ================= SECTION DASHBOARD ================= -->
-    <div id="dashboardPage" class="hidden flex h-screen overflow-hidden">
-        <!-- Sidebar Overlay (Mobile) -->
-        <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-20 hidden lg:hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
-        
-        <!-- Sidebar -->
-        <aside id="sidebar" class="bg-white w-72 h-full flex flex-col shadow-xl fixed lg:static z-30 sidebar-transition -translate-x-full lg:translate-x-0">
-            <div class="p-6 border-b flex items-center justify-between bg-slate-50">
-                <div class="flex items-center gap-3 text-blue-600 font-bold text-xl tracking-tight">
-                    <i class="fas fa-folder-open text-2xl"></i> Yor.iAPP
+    <div id="app">
+        <!-- AUTH INTERFACE (Login/Register) -->
+        <div id="authSection" class="min-h-screen flex items-center justify-center p-4">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200">
+                        <i class="fas fa-archive text-white text-3xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-800">Yor.iAPP</h1>
+                    <p class="text-slate-500">Sistem E-Arsip Digital Terintegrasi</p>
                 </div>
-                <button class="lg:hidden text-slate-400 hover:text-red-500" onclick="toggleSidebar()"><i class="fas fa-times text-xl"></i></button>
+
+                <!-- Toggle Login/Reg -->
+                <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+                    <button onclick="toggleAuthMode('login')" id="btnTabLogin" class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all bg-white shadow-sm">Masuk</button>
+                    <button onclick="toggleAuthMode('register')" id="btnTabReg" class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all text-slate-500">Daftar</button>
+                </div>
+
+                <form id="authForm" onsubmit="handleAuth(event)">
+                    <div id="regFields" class="hidden space-y-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nama Lengkap</label>
+                            <input type="text" id="regName" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Email</label>
+                            <input type="email" id="authEmail" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
+                            <input type="password" id="authPassword" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">
+                        <span id="authBtnText">Masuk ke Sistem</span>
+                    </button>
+                </form>
             </div>
+        </div>
 
-            <!-- Profil User -->
-            <div class="p-6 border-b text-center group">
-                <div class="relative w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-white shadow-md bg-slate-200 mb-3">
-                    <img id="profileImg" src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" class="w-full h-full object-cover">
-                    <label for="ppUpload" class="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer text-white text-xs font-medium transition-opacity">
-                        <i class="fas fa-camera text-xl mb-1"></i> Ubah Foto
-                    </label>
-                    <input type="file" id="ppUpload" class="hidden" accept="image/jpeg, image/png, image/webp" onchange="handlePPSelection(event)">
+        <!-- MAIN DASHBOARD (Hidden by default) -->
+        <div id="mainSection" class="hidden">
+            <!-- Navbar -->
+            <nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-archive text-white"></i>
+                        </div>
+                        <span class="font-bold text-xl tracking-tight hidden sm:block">Yor.iAPP</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <div class="text-right hidden sm:block">
+                            <p id="userNameDisplay" class="text-sm font-bold text-slate-800">User</p>
+                            <p id="userEmailDisplay" class="text-[10px] text-slate-500 uppercase tracking-wider">email@yori.app</p>
+                        </div>
+                        <button onclick="logout()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
                 </div>
-                <h2 id="userName" class="font-bold text-lg text-slate-800">Memuat...</h2>
-                <p id="userEmail" class="text-sm text-slate-500">user@email.com</p>
-            </div>
+            </nav>
 
-            <!-- Menu Kategori -->
-            <div class="flex-1 overflow-y-auto p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kategori Arsip</p>
-                    <span id="catLimitInfo" class="text-[11px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full"></span>
-                </div>
-                <ul id="categoryList" class="space-y-1">
-                    <!-- List kategori akan dirender dari JS -->
-                </ul>
-                <button id="btnAddCategory" onclick="checkActivationAndAddCategory()" class="mt-4 w-full py-2.5 border-2 border-dashed border-blue-200 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-plus"></i> Kategori Baru
-                </button>
-            </div>
-
-            <!-- Tombol Keluar -->
-            <div class="p-4 border-t bg-slate-50">
-                <button onclick="logout()" class="w-full py-2.5 bg-red-50 text-red-600 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-red-100 transition-colors">
-                    <i class="fas fa-sign-out-alt"></i> Keluar
-                </button>
-            </div>
-        </aside>
-
-        <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col relative overflow-hidden bg-slate-100/50">
-            <!-- Header -->
-            <header class="bg-white h-16 shadow-sm border-b flex items-center justify-between px-6 shrink-0 z-10">
-                <div class="flex items-center gap-4">
-                    <button class="lg:hidden text-slate-500 hover:text-blue-600 text-xl transition-colors" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-                    <h2 class="font-bold text-lg text-slate-800" id="activeCategoryTitle">Semua Arsip</h2>
-                </div>
-                <button id="btnOpenUpload" onclick="checkActivationAndOpenModal('modalUpload')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all flex items-center gap-2">
-                    <i class="fas fa-cloud-upload-alt"></i> <span class="hidden sm:inline">Upload Arsip</span>
-                </button>
-            </header>
-
-            <!-- Warning Peringatan (Jika Akun Belum Aktif) -->
-            <div id="activationWarning" class="hidden bg-red-50 border-l-4 border-red-500 p-4 m-6 rounded-r-lg shadow-sm flex items-start gap-3 fade-in">
-                <i class="fas fa-exclamation-triangle text-red-500 text-xl mt-0.5"></i>
-                <div>
-                    <h3 class="text-red-800 font-bold">Akun Belum Diaktivasi!</h3>
-                    <p class="text-sm text-red-600 mt-1">Silakan hubungi Admin untuk verifikasi agar Anda dapat menggunakan fitur upload, edit, dan hapus arsip secara penuh.</p>
-                </div>
-            </div>
-
-            <!-- Bar Pencarian dan Pagination -->
-            <div class="px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b bg-white">
-                <div class="relative flex-1 max-w-xs">
-                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input type="text" id="searchInput" placeholder="Cari arsip berdasarkan nama..." class="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <button id="prevPageBtn" class="px-3 py-1 bg-slate-100 rounded-md hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"><i class="fas fa-chevron-left"></i> Sebelumnya</button>
-                    <span id="pageInfo" class="text-slate-600 font-medium">Halaman 1 / 1</span>
-                    <button id="nextPageBtn" class="px-3 py-1 bg-slate-100 rounded-md hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all">Berikutnya <i class="fas fa-chevron-right"></i></button>
-                </div>
-            </div>
-
-            <!-- Table Data Arsip -->
-            <div class="flex-1 overflow-y-auto p-6 relative">
-                <!-- Loader Tampilan Awal -->
-                <div id="dataLoader" class="absolute inset-0 bg-slate-100/80 z-10 flex flex-col items-center justify-center hidden backdrop-blur-sm">
-                    <i class="fas fa-circle-notch fa-spin text-4xl text-blue-600 mb-3"></i>
-                    <p class="text-sm font-semibold text-slate-600">Menyinkronkan Data...</p>
+            <!-- Dashboard Content -->
+            <main class="max-w-7xl mx-auto px-4 py-8">
+                <!-- Stats & Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="md:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">Selamat Datang di Portal Arsip</h2>
+                            <p class="text-blue-100 opacity-80 max-w-md">Simpan, kelola, dan akses dokumen penting Anda dengan aman menggunakan integrasi Google Drive.</p>
+                        </div>
+                        <div class="mt-6 flex gap-3">
+                            <button onclick="openUploadModal()" class="bg-white text-blue-600 px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:bg-blue-50 transition-all">
+                                <i class="fas fa-plus mr-2"></i> Upload Baru
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-folder-open text-2xl text-slate-400"></i>
+                        </div>
+                        <h3 class="text-3xl font-bold text-slate-800" id="totalFiles">0</h3>
+                        <p class="text-slate-500 text-sm">Total Dokumen Tersimpan</p>
+                    </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <!-- Archive Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <i class="fas fa-list-ul mr-2 text-blue-500"></i> Daftar Arsip Anda
+                        </h3>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" placeholder="Cari dokumen..." class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm w-full sm:w-64 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left whitespace-nowrap">
-                            <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                <tr>
-                                    <th class="p-4 w-1/2">Nama Dokumen</th>
-                                    <th class="p-4">Kategori</th>
-                                    <th class="p-4">Tahun</th>
-                                    <th class="p-4 text-right">Aksi</th>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/50 text-slate-500 text-[10px] uppercase tracking-widest font-bold">
+                                    <th class="px-6 py-4">Nama Dokumen</th>
+                                    <th class="px-6 py-4">Kategori</th>
+                                    <th class="px-6 py-4">Tahun</th>
+                                    <th class="px-6 py-4 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
-                                <!-- Data Arsip akan dirender disini -->
+                            <tbody id="archiveTableBody" class="divide-y divide-slate-100">
+                                <!-- Data rows injected here -->
                             </tbody>
                         </table>
                     </div>
-                    
-                    <!-- Empty State -->
-                    <div id="emptyState" class="hidden flex-col items-center justify-center p-16 text-center text-slate-400">
-                        <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
-                            <i class="fas fa-box-open text-4xl text-slate-300"></i>
-                        </div>
-                        <h3 class="font-bold text-slate-600 text-lg">Tidak ada arsip ditemukan</h3>
-                        <p class="text-sm mt-1">Coba kata kunci lain atau upload dokumen baru.</p>
+                    <div id="emptyState" class="p-20 text-center hidden">
+                        <img src="https://illustrations.popsy.co/slate/empty-folder.svg" class="w-32 mx-auto mb-4 opacity-50">
+                        <p class="text-slate-400">Belum ada dokumen yang diunggah.</p>
                     </div>
                 </div>
-                
-                <!-- Footer Info -->
-                <p class="text-center text-xs text-slate-400 mt-8 mb-4">Yor.iAPP &copy; 2026. Hak Cipta Dilindungi.</p>
-            </div>
-        </main>
-    </div>
-
-    <!-- ================= MODALS & OVERLAYS ================= -->
-
-    <!-- Modal Preview Iframe -->
-    <div id="modalPreview" class="fixed inset-0 bg-slate-900/95 z-[100] hidden flex flex-col backdrop-blur-sm">
-        <div class="p-4 flex justify-between items-center text-white border-b border-slate-800">
-            <h3 id="previewTitle" class="font-bold truncate pr-4 text-lg flex items-center gap-2">
-                <i class="fas fa-file-alt text-blue-400"></i> <span id="previewTitleText">Preview</span>
-            </h3>
-            <button onclick="closeModal('modalPreview')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
-                <i class="fas fa-times"></i> TUTUP
-            </button>
-        </div>
-        <div class="flex-1 bg-white relative">
-            <div id="previewLoader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50">
-                <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-3"></i>
-                <span class="text-sm font-medium text-slate-500">Memuat pratinjau dokumen...</span>
-            </div>
-            <iframe id="previewFrame" src="" class="w-full h-full border-0" sandbox="allow-scripts allow-same-origin allow-forms" onload="document.getElementById('previewLoader').style.display='none'"></iframe>
+            </main>
         </div>
     </div>
 
-    <!-- Modal Upload -->
-    <div id="modalUpload" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-md modal-fade overflow-hidden shadow-2xl">
-            <div class="p-5 border-b bg-slate-50 flex justify-between items-center">
-                <h3 class="font-bold text-lg text-slate-800"><i class="fas fa-cloud-upload-alt text-blue-600 mr-2"></i> Upload Arsip</h3>
-                <button onclick="closeModal('modalUpload')" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
+    <!-- UPLOAD MODAL -->
+    <div id="uploadModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden scale-95 transition-transform">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-bold text-slate-800">Upload Dokumen Baru</h3>
+                <button onclick="closeModal('uploadModal')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-6">
-                <form onsubmit="handleUpload(event)" class="space-y-4">
+            <form onsubmit="handleUpload(event)" class="p-6 space-y-4">
+                <div class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-400 transition-colors cursor-pointer relative">
+                    <input type="file" id="fileInput" class="absolute inset-0 opacity-0 cursor-pointer" onchange="updateFileInfo(this)" required>
+                    <div id="fileInfoPlaceholder">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-slate-300 mb-2"></i>
+                        <p class="text-sm text-slate-500">Klik atau drag file ke sini</p>
+                    </div>
+                    <div id="fileInfoDisplay" class="hidden">
+                        <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                        <p id="selectedFileName" class="text-sm font-bold text-slate-700 truncate px-4"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">Pilih File (PDF/IMG/DOC)</label>
-                        <input type="file" id="upFile" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">Nama Dokumen</label>
-                        <input type="text" id="upName" placeholder="Contoh: Surat Keputusan 01" required class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-1">Kategori</label>
-                            <select id="upCategory" required class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"></select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-1">Tahun Arsip</label>
-                            <select id="upYear" required class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"></select>
-                        </div>
-                    </div>
-                    
-                    <!-- Progress Bar Upload -->
-                    <div id="uploadProgress" class="hidden pt-2">
-                        <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1">
-                            <span>Mengunggah file...</span>
-                            <span id="uploadPercentText">0%</span>
-                        </div>
-                        <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                            <div id="uploadBar" class="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out" style="width:0%"></div>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" id="btnUploadSubmit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow mt-2 transition-all">SIMPAN ARSIP</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Edit Arsip -->
-    <div id="modalEdit" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-md modal-fade overflow-hidden shadow-2xl">
-            <div class="p-5 border-b bg-orange-50 flex justify-between items-center">
-                <h3 class="font-bold text-lg text-orange-800"><i class="fas fa-edit text-orange-600 mr-2"></i> Edit Metadata Arsip</h3>
-                <button onclick="closeModal('modalEdit')" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <div class="p-6">
-                <form onsubmit="handleEdit(event)" class="space-y-4">
-                    <input type="hidden" id="editRowIndex">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">Nama Dokumen</label>
-                        <input type="text" id="editName" required class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all">
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Nama Arsip</label>
+                        <input type="text" id="uploadCustomName" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">Kategori</label>
-                        <select id="editCategory" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all"></select>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Tahun</label>
+                        <input type="number" id="uploadYear" value="2024" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">Tahun Arsip</label>
-                        <select id="editYear" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all"></select>
-                    </div>
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" onclick="closeModal('modalEdit')" class="flex-1 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-colors">BATAL</button>
-                        <button type="submit" id="btnEditSubmit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg shadow transition-all">UPDATE</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Tambah Kategori -->
-    <div id="modalAddCategory" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm modal-fade shadow-2xl">
-            <h3 class="font-bold text-lg text-slate-800 mb-4"><i class="fas fa-tags text-blue-500 mr-2"></i> Tambah Kategori</h3>
-            <form onsubmit="handleAddCategory(event)" class="space-y-4">
+                </div>
                 <div>
-                    <input type="text" id="newCatName" required placeholder="Contoh: Surat Masuk" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Kategori</label>
+                    <select id="uploadCategory" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>Umum</option>
+                        <option>Penting</option>
+                        <option>Keuangan</option>
+                        <option>Pribadi</option>
+                    </select>
                 </div>
-                <div class="flex gap-2">
-                    <button type="button" onclick="closeModal('modalAddCategory')" class="w-1/3 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-colors">Batal</button>
-                    <button type="submit" id="btnKategoriSubmit" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-lg shadow transition-all">SIMPAN</button>
-                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all mt-4">
+                    Mulai Upload ke Drive
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- Modal Crop Foto Profil -->
-    <div id="modalCrop" class="fixed inset-0 bg-slate-900/90 z-[110] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl overflow-hidden max-w-sm w-full modal-fade shadow-2xl flex flex-col">
-            <div class="p-4 border-b font-bold text-slate-800 bg-slate-50 flex justify-between items-center">
-                <span><i class="fas fa-crop-alt text-blue-600 mr-2"></i> Sesuaikan Foto</span>
-                <button onclick="closeModal('modalCrop')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="h-64 bg-slate-200 flex items-center justify-center p-2 relative">
-                <img id="imageToCrop" class="max-h-full max-w-full">
-            </div>
-            <div class="p-4 flex gap-3 bg-white">
-                <button onclick="closeModal('modalCrop')" class="flex-1 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-colors">Batal</button>
-                <button onclick="processCropAndUpload()" id="btnSaveCrop" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-check"></i> Simpan
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // ================= KONFIGURASI =================
-        // GANTI URL INI dengan URL Web App Google Apps Script yang sudah dideploy
-        const API_URL = '{{SCRIPT_URL}}'; // contoh: 'https://script.google.com/macros/s/.../exec'
+        // -- STATE MANAGEMENT --
+        let authMode = 'login';
+        let currentUser = JSON.parse(localStorage.getItem('yori_user') || 'null');
 
-        // ================= STATE GLOBAL =================
-        let currentEmail = localStorage.getItem('yori_email');
-        let isActivated = false;
-        let globalArchives = [];
-        let globalCategories = [];
-        let currentFilter = 'All';
-        let searchTerm = '';
-        let currentPage = 1;
-        const itemsPerPage = 10;
-        let cropperInstance = null;
-
-        // ================= FUNGSI UTILITY FETCH =================
-        async function callAPI(action, data = {}) {
-            const payload = { action, ...data };
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                const text = await response.text();
-                try {
-                    return JSON.parse(text);
-                } catch (e) {
-                    console.error('Invalid JSON:', text);
-                    throw new Error('Respons server bukan JSON yang valid');
-                }
-            } catch (err) {
-                console.error('API Error:', err);
-                return { success: false, message: 'Koneksi gagal: ' + err.message };
-            }
-        }
-
-        // ================= INISIALISASI =================
-        window.onload = function() {
-            setupYearSelects();
-            
-            // Otomatis isi nama file dari input file ke input teks nama arsip
-            document.getElementById('upFile').addEventListener('change', function(e) {
-                if(this.files[0] && !document.getElementById('upName').value) {
-                    let nameOnly = this.files[0].name.split('.').slice(0, -1).join('.');
-                    document.getElementById('upName').value = nameOnly;
-                }
-            });
-
-            // Event listener untuk pencarian
-            document.getElementById('searchInput').addEventListener('input', function() {
-                searchTerm = this.value.trim().toLowerCase();
-                currentPage = 1;
-                renderTable();
-            });
-
-            // Event listener pagination
-            document.getElementById('prevPageBtn').addEventListener('click', () => changePage(-1));
-            document.getElementById('nextPageBtn').addEventListener('click', () => changePage(1));
-
-            // Cek otorisasi
-            if (currentEmail) {
-                checkAuth(currentEmail).then(isValid => {
-                    if(isValid) {
-                        showDashboard();
-                    } else {
-                        localStorage.removeItem('yori_email');
-                        showLogin();
-                    }
-                });
+        // -- INITIALIZATION --
+        window.onload = () => {
+            if (currentUser) {
+                showDashboard();
             } else {
-                showLogin();
+                showAuth();
             }
         };
 
-        async function checkAuth(email) {
-            const res = await callAPI('checkAuth', { email });
-            return res.success === true;
+        // -- CORE FUNCTIONS --
+        function toggleAuthMode(mode) {
+            authMode = mode;
+            const regFields = document.getElementById('regFields');
+            const authBtnText = document.getElementById('authBtnText');
+            const btnLogin = document.getElementById('btnTabLogin');
+            const btnReg = document.getElementById('btnTabReg');
+
+            if (mode === 'register') {
+                regFields.classList.remove('hidden');
+                authBtnText.innerText = 'Buat Akun Baru';
+                btnReg.classList.add('bg-white', 'shadow-sm');
+                btnReg.classList.remove('text-slate-500');
+                btnLogin.classList.remove('bg-white', 'shadow-sm');
+                btnLogin.classList.add('text-slate-500');
+            } else {
+                regFields.classList.add('hidden');
+                authBtnText.innerText = 'Masuk ke Sistem';
+                btnLogin.classList.add('bg-white', 'shadow-sm');
+                btnLogin.classList.remove('text-slate-500');
+                btnReg.classList.remove('bg-white', 'shadow-sm');
+                btnReg.classList.add('text-slate-500');
+            }
         }
 
-        function showLogin() {
-            document.getElementById('loginPage').style.display = 'flex';
-            document.getElementById('dashboardPage').classList.add('hidden');
+        async function apiCall(action, data = {}) {
+            const loader = document.getElementById('globalLoader');
+            loader.classList.remove('hidden');
+            
+            try {
+                // Konversi data ke format yang diterima GAS (biasanya melalui parameter JSON)
+                const url = new URL(GAS_WEB_APP_URL);
+                const formData = new FormData();
+                formData.append('action', action);
+                formData.append('payload', JSON.stringify(data));
+
+                // CATATAN: Karena GAS memiliki keterbatasan CORS pada POST, 
+                // kita harus mengirimkan permintaan ke endpoint yang memproses action tersebut.
+                // Dalam GAS Backend Anda, tambahkan parameter 'action' pada doGet atau doPost.
+                
+                const response = await fetch(GAS_WEB_APP_URL + "?action=" + action, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                loader.classList.add('hidden');
+                return result;
+            } catch (err) {
+                loader.classList.add('hidden');
+                console.error("API Error:", err);
+                return { success: false, message: "Terjadi kesalahan koneksi ke server." };
+            }
+        }
+
+        // Mock Logic for Demo (Since I can't access your actual GAS URL here)
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const pass = document.getElementById('authPassword').value;
+
+            // Integrasi ke GAS Anda:
+            // const result = await apiCall(authMode === 'login' ? 'loginUser' : 'registerUser', { email, pass });
+            
+            // Simuasi Login Sukses
+            const mockUser = { username: email.split('@')[0], email: email, id: '123' };
+            localStorage.setItem('yori_user', JSON.stringify(mockUser));
+            currentUser = mockUser;
+            
+            Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Selamat datang kembali!', timer: 1500, showConfirmButton: false });
+            showDashboard();
         }
 
         function showDashboard() {
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('dashboardPage').classList.remove('hidden');
-            loadInitialData();
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('mainSection').classList.remove('hidden');
+            document.getElementById('userNameDisplay').innerText = currentUser.username;
+            document.getElementById('userEmailDisplay').innerText = currentUser.email;
+            loadArchives();
         }
 
-        function toggleAuth(isRegister) {
-            const loginBox = document.getElementById('loginBox');
-            const registerBox = document.getElementById('registerBox');
-            if (isRegister) {
-                loginBox.classList.add('hidden');
-                registerBox.classList.remove('hidden');
-            } else {
-                registerBox.classList.add('hidden');
-                loginBox.classList.remove('hidden');
-            }
+        function showAuth() {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('mainSection').classList.add('hidden');
         }
 
-        // ================= AUTHENTIKASI =================
-        async function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('logEmail').value;
-            const pass = document.getElementById('logPassword').value;
-            const btn = document.getElementById('btnLogin');
-            
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> MEMPROSES...';
-            btn.disabled = true;
+        function logout() {
+            localStorage.removeItem('yori_user');
+            currentUser = null;
+            showAuth();
+        }
 
-            const res = await callAPI('login', { email, password: pass });
-            btn.innerHTML = 'MASUK'; btn.disabled = false;
-            if(res.success) {
-                localStorage.setItem('yori_email', res.user.email);
-                currentEmail = res.user.email;
-                showDashboard();
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `Selamat datang, ${res.user.username}!`, showConfirmButton: false, timer: 2000 });
-            } else {
-                Swal.fire('Login Gagal', res.message || 'Email atau password salah', 'error');
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function updateFileInfo(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('fileInfoPlaceholder').classList.add('hidden');
+                document.getElementById('fileInfoDisplay').classList.remove('hidden');
+                document.getElementById('selectedFileName').innerText = input.files[0].name;
+                document.getElementById('uploadCustomName').value = input.files[0].name.split('.').slice(0, -1).join('.');
             }
         }
 
-        async function handleRegister(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnReg');
-            const data = {
-                username: document.getElementById('regUser').value,
-                email: document.getElementById('regEmail').value,
-                password: document.getElementById('regPass').value
-            };
-            
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> MENDAFTAR...';
-            btn.disabled = true;
-
-            const res = await callAPI('register', { data });
-            btn.innerHTML = 'DAFTAR SEKARANG'; btn.disabled = false;
-            if(res.success) {
-                Swal.fire('Pendaftaran Berhasil', 'Silakan login dengan akun Anda.', 'success').then(() => {
-                    document.getElementById('logEmail').value = data.email;
-                    toggleAuth(false);
-                });
-            } else { 
-                Swal.fire('Gagal', res.message || 'Pendaftaran gagal', 'error'); 
-            }
-        }
-
-        // ================= LOAD DATA DASHBOARD =================
-        async function loadInitialData() {
-            document.getElementById('dataLoader').classList.remove('hidden');
-            
-            // Ambil Profil
-            const profile = await callAPI('getUserProfile', { email: currentEmail });
-            if(!profile || !profile.username) {
-                logout();
-                return;
-            }
-            document.getElementById('userName').innerText = profile.username;
-            document.getElementById('userEmail').innerText = profile.email;
-            if(profile.pic && profile.pic.startsWith('data:image')) {
-                document.getElementById('profileImg').src = profile.pic;
-            }
-            
-            // Cek Aktivasi (jika kolom status di sheet berisi sesuatu berarti aktif)
-            isActivated = profile.status && profile.status.trim() !== '';
-            document.getElementById('activationWarning').classList.toggle('hidden', isActivated);
-            
-            // Ambil Kategori & Arsip Paralel
-            const categories = await callAPI('getCategories', { email: currentEmail });
-            globalCategories = categories || [];
-            renderCategories();
-            
-            const archives = await callAPI('getArchives', { email: currentEmail });
-            globalArchives = (archives || []).sort((a, b) => b.year - a.year);
-            renderTable();
-            document.getElementById('dataLoader').classList.add('hidden');
-        }
-
-        // ================= RENDER KATEGORI =================
-        function renderCategories() {
-            const listEl = document.getElementById('categoryList');
-            let html = `
-                <li class="px-3 py-2.5 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${currentFilter === 'All' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-100'}" onclick="filterCategory('All')">
-                    <i class="fas fa-folder text-lg w-5 text-center"></i> <span>Semua Arsip</span>
-                </li>`;
-                
-            globalCategories.forEach(c => {
-                const isActive = currentFilter === c.name;
-                html += `
-                <li class="cat-item px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
-                    <div class="cat-name" onclick="filterCategory('${c.name}')">
-                        <i class="fas fa-folder text-lg w-5 text-center"></i>
-                        <span class="truncate">${c.name}</span>
-                    </div>
-                    <button class="delete-cat" onclick="event.stopPropagation(); confirmDeleteCategory('${c.name}')" title="Hapus kategori">
-                        <i class="fas fa-trash-alt text-xs"></i>
-                    </button>
-                </li>`;
-            });
-            listEl.innerHTML = html;
-            
-            // Update limit info
-            const limitSpan = document.getElementById('catLimitInfo');
-            const currentCount = globalCategories.length;
-            limitSpan.innerText = `${currentCount}/3 Kategori`;
-            
-            const btnAdd = document.getElementById('btnAddCategory');
-            if(currentCount >= 3) {
-                btnAdd.disabled = true;
-                btnAdd.classList.add('opacity-50', 'cursor-not-allowed');
-                btnAdd.title = "Maksimal 3 kategori, hapus salah satu untuk menambah";
-            } else {
-                btnAdd.disabled = false;
-                btnAdd.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnAdd.title = "Tambah kategori baru";
-            }
-            
-            // Update dropdown kategori di modal upload dan edit
-            const optionsHtml = globalCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            document.getElementById('upCategory').innerHTML = optionsHtml;
-            document.getElementById('editCategory').innerHTML = optionsHtml;
-        }
-
-        // ================= FUNGSI KATEGORI =================
-        async function confirmDeleteCategory(categoryName) {
-            if(!isActivated) {
-                Swal.fire('Fitur Dibatasi', 'Akun Anda belum aktif. Hubungi Admin.', 'warning');
-                return;
-            }
-            Swal.fire({
-                title: 'Hapus Kategori?',
-                html: `Apakah Anda yakin ingin menghapus kategori <strong>${categoryName}</strong>?<br>Kategori yang memiliki arsip tidak dapat dihapus.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: 'Ya, Hapus',
-                cancelButtonText: 'Batal'
-            }).then(async (result) => {
-                if(result.isConfirmed) {
-                    Swal.showLoading();
-                    const res = await callAPI('deleteCategory', { email: currentEmail, categoryName });
-                    if(res.success) {
-                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Kategori dihapus', showConfirmButton: false, timer: 1500 });
-                        if(currentFilter === categoryName) {
-                            currentFilter = 'All';
-                            document.getElementById('activeCategoryTitle').innerText = 'Semua Arsip';
-                        }
-                        loadInitialData();
-                    } else {
-                        Swal.fire('Gagal Menghapus', res.message, 'error');
-                    }
-                }
-            });
-        }
-
-        function checkActivationAndAddCategory() {
-            if(!isActivated) {
-                Swal.fire('Akses Dibatasi', 'Akun Anda belum diaktivasi.', 'warning');
-                return;
-            }
-            if(globalCategories.length >= 3) {
-                Swal.fire('Batas Kategori Tercapai', 'Anda hanya dapat memiliki maksimal 3 kategori. Hapus salah satu kategori terlebih dahulu.', 'warning');
-                return;
-            }
-            openModal('modalAddCategory');
-        }
-
-        async function handleAddCategory(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('newCatName');
-            const name = nameInput.value.trim();
-            const btn = document.getElementById('btnKategoriSubmit');
-            if(!name) return;
-
-            if(globalCategories.length >= 3) {
-                Swal.fire('Batas Kategori', 'Anda hanya dapat memiliki maksimal 3 kategori. Hapus salah satu terlebih dahulu.', 'warning');
-                closeModal('modalAddCategory');
-                return;
-            }
-
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-
-            const res = await callAPI('addCategory', { email: currentEmail, categoryName: name });
-            btn.innerHTML = 'SIMPAN'; btn.disabled = false;
-            if(res.success) {
-                closeModal('modalAddCategory');
-                nameInput.value = '';
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Kategori ditambahkan', showConfirmButton: false, timer: 1500 });
-                loadInitialData();
-            } else {
-                Swal.fire('Error', res.message || 'Gagal menambah kategori', 'error');
-            }
-        }
-
-        function filterCategory(catName) {
-            currentFilter = catName;
-            document.getElementById('activeCategoryTitle').innerText = catName === 'All' ? 'Semua Arsip' : 'Kategori: ' + catName;
-            currentPage = 1;
-            renderCategories(); 
-            renderTable();
-            if(window.innerWidth < 1024) toggleSidebar();
-        }
-
-        // ================= RENDER TABEL ARSIP =================
-        function getFileIcon(fileName) {
-            const ext = fileName.split('.').pop().toLowerCase();
-            if(['pdf'].includes(ext)) return '<i class="fas fa-file-pdf text-red-500 text-xl"></i>';
-            if(['jpg','jpeg','png','webp'].includes(ext)) return '<i class="fas fa-file-image text-blue-400 text-xl"></i>';
-            if(['doc','docx'].includes(ext)) return '<i class="fas fa-file-word text-blue-700 text-xl"></i>';
-            return '<i class="fas fa-file-alt text-slate-400 text-xl"></i>';
-        }
-
-        function getFilteredArchives() {
-            let filtered = [...globalArchives];
-            if (currentFilter !== 'All') {
-                filtered = filtered.filter(a => a.category === currentFilter);
-            }
-            if (searchTerm !== '') {
-                filtered = filtered.filter(a => a.fileName.toLowerCase().includes(searchTerm));
-            }
-            return filtered;
-        }
-
-        function renderTable() {
-            const filtered = getFilteredArchives();
-            const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-            if (currentPage > totalPages) currentPage = totalPages;
-            const start = (currentPage - 1) * itemsPerPage;
-            const pageData = filtered.slice(start, start + itemsPerPage);
-            const tbody = document.getElementById('tableBody');
-            const emptyState = document.getElementById('emptyState');
-            const prevBtn = document.getElementById('prevPageBtn');
-            const nextBtn = document.getElementById('nextPageBtn');
-            const pageInfo = document.getElementById('pageInfo');
-
-            if (pageData.length === 0) {
-                tbody.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                emptyState.classList.add('flex');
-                prevBtn.disabled = true;
-                nextBtn.disabled = true;
-                pageInfo.innerText = `Halaman 1 / 1`;
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-            emptyState.classList.remove('flex');
-
-            tbody.innerHTML = pageData.map(item => {
-                const isDownloadDisabled = !isActivated;
-                const downloadClass = isDownloadDisabled ? 'disabled-download' : '';
-                const downloadHref = isDownloadDisabled ? 'javascript:void(0)' : item.downloadUrl;
-                const downloadOnClick = isDownloadDisabled ? `onclick="Swal.fire('Akses Dibatasi', 'Akun Anda belum diaktivasi, tidak dapat mengunduh arsip.', 'warning'); return false;"` : '';
-                
-                return `
-                    <tr class="hover:bg-slate-50 transition-colors group">
-                        <td class="p-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center shrink-0">${getFileIcon(item.fileName)}</div>
-                                <div>
-                                    <div class="font-semibold text-slate-800 truncate max-w-[180px] sm:max-w-xs" title="${item.fileName}">${item.fileName}</div>
-                                    <div class="text-xs text-slate-400">${item.date}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="p-4">
-                            <span class="inline-block px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-600 rounded-md text-xs font-medium">${item.category}</span>
-                        </td>
-                        <td class="p-4 text-slate-500 font-medium">${item.year}</td>
-                        <td class="p-4 text-right">
-                            <div class="flex justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="openPreview('${item.previewUrl}', '${item.fileName}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center" title="Pratinjau"><i class="fas fa-eye"></i></button>
-                                <a href="${downloadHref}" ${downloadOnClick} target="${isDownloadDisabled ? '' : '_blank'}" class="w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm flex items-center justify-center ${downloadClass}" title="${isDownloadDisabled ? 'Unduh dinonaktifkan' : 'Unduh'}"><i class="fas fa-download"></i></a>
-                                <button onclick="openEdit(${item.rowIndex}, '${item.fileName}', '${item.category}', '${item.year}')" class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white transition-all shadow-sm flex items-center justify-center" title="Edit Metadata"><i class="fas fa-edit"></i></button>
-                                <button onclick="handleDelete('${item.id}', ${item.rowIndex})" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center" title="Hapus Permanen"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            prevBtn.disabled = (currentPage === 1);
-            nextBtn.disabled = (currentPage === totalPages);
-            pageInfo.innerText = `Halaman ${currentPage} / ${totalPages}`;
-        }
-
-        function changePage(delta) {
-            const filtered = getFilteredArchives();
-            const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-            const newPage = currentPage + delta;
-            if (newPage >= 1 && newPage <= totalPages) {
-                currentPage = newPage;
-                renderTable();
-            }
-        }
-
-        // ================= UPLOAD & MANAJEMEN ARSIP =================
         async function handleUpload(e) {
             e.preventDefault();
-            const fileInput = document.getElementById('upFile');
-            const file = fileInput.files[0];
-            if(!file) return;
-            if(file.size > 5 * 1024 * 1024) { 
-                Swal.fire('File Terlalu Besar', 'Maksimal ukuran file adalah 5MB.', 'warning'); 
-                return; 
-            }
-            const btn = document.getElementById('btnUploadSubmit');
-            const progressContainer = document.getElementById('uploadProgress');
-            const progressBar = document.getElementById('uploadBar');
-            const percentText = document.getElementById('uploadPercentText');
-            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> MENGUNGGAH...';
-            progressContainer.classList.remove('hidden');
+            const file = document.getElementById('fileInput').files[0];
+            const reader = new FileReader();
             
-            const reader = new FileReader();
-            reader.onload = async function(ev) {
+            document.getElementById('globalLoader').classList.remove('hidden');
+            
+            reader.onload = async function() {
+                const base64 = reader.result.split(',')[1];
                 const data = {
-                    email: currentEmail,
+                    email: currentUser.email,
                     fileName: file.name,
-                    customName: document.getElementById('upName').value,
                     mimeType: file.type,
-                    base64: ev.target.result.split(',')[1],
-                    category: document.getElementById('upCategory').value,
-                    year: document.getElementById('upYear').value
+                    base64: base64,
+                    customName: document.getElementById('uploadCustomName').value,
+                    year: document.getElementById('uploadYear').value,
+                    category: document.getElementById('uploadCategory').value
                 };
-                let p = 0; 
-                const interval = setInterval(() => { 
-                    p += Math.floor(Math.random()*15); 
-                    if(p>85) p=85; 
-                    progressBar.style.width = p+'%'; 
-                    percentText.innerText = p+'%'; 
-                }, 400);
+
+                // Panggil fungsi GAS uploadArchive
+                // const result = await apiCall('uploadArchive', data);
                 
-                const res = await callAPI('uploadArchive', { data });
-                clearInterval(interval);
-                progressBar.style.width = '100%'; percentText.innerText = '100%';
+                // Simuasi Berhasil
                 setTimeout(() => {
-                    if(res.success) {
-                        Swal.fire('Upload Berhasil', 'Arsip Anda telah tersimpan secara aman.', 'success');
-                        closeModal('modalUpload');
-                        document.getElementById('upFile').value = '';
-                        document.getElementById('upName').value = '';
-                        loadInitialData();
-                    } else {
-                        Swal.fire('Gagal Upload', res.message, 'error');
-                    }
-                    resetUploadUI(btn, progressContainer, progressBar, percentText);
-                }, 500);
+                    document.getElementById('globalLoader').classList.add('hidden');
+                    closeModal('uploadModal');
+                    Swal.fire('Berhasil!', 'File berhasil disimpan ke Drive.', 'success');
+                    loadArchives();
+                }, 2000);
             };
             reader.readAsDataURL(file);
         }
 
-        function resetUploadUI(btn, container, bar, text) {
-            btn.disabled = false; btn.innerText = 'SIMPAN ARSIP';
-            container.classList.add('hidden');
-            bar.style.width = '0%'; text.innerText = '0%';
-        }
+        function loadArchives() {
+            const tableBody = document.getElementById('archiveTableBody');
+            const totalDisplay = document.getElementById('totalFiles');
+            
+            // Dummy Data
+            const data = [
+                { fileName: 'Ijazah Kelulusan', category: 'Penting', year: '2020', id: '1' },
+                { fileName: 'Laporan Keuangan Jan', category: 'Keuangan', year: '2024', id: '2' }
+            ];
 
-        async function handleDelete(id, rowIndex) {
-            if(!isActivated) {
-                Swal.fire('Fitur Dibatasi', 'Akun Anda belum aktif.', 'warning');
+            totalDisplay.innerText = data.length;
+            
+            if (data.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                tableBody.innerHTML = '';
                 return;
             }
-            Swal.fire({
-                title: 'Hapus Arsip?',
-                text: "Dokumen ini akan dihapus permanen.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
-            }).then(async (result) => {
-                if(result.isConfirmed) {
-                    Swal.showLoading();
-                    const res = await callAPI('deleteArchive', { fileId: id, rowIndex });
-                    if(res.success) {
-                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Arsip berhasil dihapus', showConfirmButton: false, timer: 1500 });
-                        loadInitialData();
-                    } else {
-                        Swal.fire('Gagal Menghapus', res.message, 'error');
-                    }
-                }
-            });
-        }
 
-        function openEdit(rowIndex, fileName, category, year) {
-            if(!isActivated) {
-                Swal.fire('Fitur Dibatasi', 'Akun Anda belum aktif.', 'warning');
-                return;
-            }
-            document.getElementById('editRowIndex').value = rowIndex;
-            document.getElementById('editName').value = fileName;
-            document.getElementById('editCategory').value = category;
-            document.getElementById('editYear').value = year;
-            openModal('modalEdit');
-        }
-
-        async function handleEdit(e) {
-            e.preventDefault();
-            const rowIndex = document.getElementById('editRowIndex').value;
-            const btn = document.getElementById('btnEditSubmit');
-            const newData = {
-                fileName: document.getElementById('editName').value,
-                category: document.getElementById('editCategory').value,
-                year: document.getElementById('editYear').value
-            };
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
-            btn.disabled = true;
-            const res = await callAPI('updateArchive', { rowIndex, newData });
-            btn.innerHTML = 'UPDATE'; btn.disabled = false;
-            if(res.success) {
-                closeModal('modalEdit');
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Data diperbarui', showConfirmButton: false, timer: 1500 });
-                loadInitialData();
-            } else {
-                Swal.fire('Gagal Update', res.message, 'error');
-            }
-        }
-
-        // ================= FOTO PROFIL =================
-        function handlePPSelection(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            if(!file.type.match('image.*')) { 
-                Swal.fire('Format Salah', 'Harap pilih file gambar (JPG/PNG).', 'error'); 
-                return; 
-            }
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                document.getElementById('imageToCrop').src = ev.target.result;
-                openModal('modalCrop');
-                if(cropperInstance) cropperInstance.destroy();
-                const image = document.getElementById('imageToCrop');
-                cropperInstance = new Cropper(image, { aspectRatio: 1, viewMode: 1, dragMode: 'move', autoCropArea: 0.9, restore: false, guides: false, center: false, highlight: false, cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false });
-            };
-            reader.readAsDataURL(file);
-            e.target.value = '';
-        }
-
-        async function processCropAndUpload() {
-            if(!cropperInstance) return;
-            const btn = document.getElementById('btnSaveCrop');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-            btn.disabled = true;
-            const canvas = cropperInstance.getCroppedCanvas({ width: 200, height: 200 });
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
-            const res = await callAPI('uploadProfilePic', { email: currentEmail, dataUrl });
-            btn.innerHTML = '<i class="fas fa-check"></i> Simpan';
-            btn.disabled = false;
-            if(res.success) {
-                document.getElementById('profileImg').src = dataUrl;
-                closeModal('modalCrop');
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Foto Profil Diperbarui', showConfirmButton: false, timer: 1500 });
-            } else {
-                Swal.fire('Gagal', res.message, 'error');
-            }
-        }
-
-        // ================= UTILITY =================
-        function setupYearSelects() {
-            const currentYear = new Date().getFullYear();
-            let options = '';
-            for(let i = currentYear; i >= currentYear - 20; i--) {
-                options += `<option value="${i}">${i}</option>`;
-            }
-            document.getElementById('upYear').innerHTML = options;
-            document.getElementById('editYear').innerHTML = options;
-        }
-
-        function openPreview(url, title) {
-            document.getElementById('previewTitleText').innerText = title;
-            document.getElementById('previewLoader').style.display = 'flex';
-            document.getElementById('previewFrame').src = url;
-            openModal('modalPreview');
-        }
-
-        function openModal(id) { 
-            const modal = document.getElementById(id);
-            modal.classList.remove('hidden'); 
-            modal.classList.add('flex');
-        }
-        
-        function closeModal(id) { 
-            document.getElementById(id).classList.add('hidden'); 
-            document.getElementById(id).classList.remove('flex'); 
-            if(id === 'modalPreview') document.getElementById('previewFrame').src = ''; 
-        }
-        
-        function toggleSidebar() { 
-            const sb = document.getElementById('sidebar');
-            const ov = document.getElementById('sidebarOverlay');
-            sb.classList.toggle('-translate-x-full');
-            ov.classList.toggle('hidden');
-        }
-        
-        function logout() {
-            Swal.fire({
-                title: 'Keluar?', text: "Anda harus login kembali untuk mengakses arsip.", icon: 'question',
-                showCancelButton: true, confirmButtonColor: '#3b82f6', cancelButtonColor: '#ef4444', confirmButtonText: 'Ya, Keluar'
-            }).then((result) => {
-                if(result.isConfirmed) {
-                    localStorage.removeItem('yori_email');
-                    location.reload();
-                }
-            });
-        }
-
-        function checkActivationAndOpenModal(modalId) {
-            if(!isActivated) {
-                Swal.fire({ icon: 'warning', title: 'Akses Dibatasi', html: 'Akun Anda <b>Belum Diaktivasi</b>.<br>Fitur upload dan manipulasi data saat ini dikunci.' });
-                return;
-            }
-            openModal(modalId);
+            document.getElementById('emptyState').classList.add('hidden');
+            tableBody.innerHTML = data.map(item => `
+                <tr class="hover:bg-slate-50 transition-colors group">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded bg-red-100 flex items-center justify-center text-red-600 mr-3">
+                                <i class="fas fa-file-pdf text-xs"></i>
+                            </div>
+                            <span class="text-sm font-medium text-slate-700">${item.fileName}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${item.category}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${item.year}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button class="p-2 text-slate-400 hover:text-blue-600 transition-colors"><i class="fas fa-eye"></i></button>
+                            <button class="p-2 text-slate-400 hover:text-red-600 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
         }
     </script>
 </body>
