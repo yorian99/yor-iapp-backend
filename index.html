@@ -381,7 +381,7 @@
     <script>
         // ================= KONFIGURASI =================
         // GANTI URL INI dengan URL Web App Google Apps Script yang sudah dideploy
-        const API_URL = '{{https://script.google.com/macros/s/AKfycbwCgn1S5lGbeDFe5_uqTyXWyqk0bhcqvmRELOj1eQFijiibyuez2GPi1V1vidxIWK86/exec}}'; // contoh: 'https://script.google.com/macros/s/.../exec'
+        const API_URL = '{{SCRIPT_URL}}'; // contoh: 'https://script.google.com/macros/s/.../exec'
 
         // ================= STATE GLOBAL =================
         let currentEmail = localStorage.getItem('yori_email');
@@ -404,8 +404,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const result = await response.json();
-                return result;
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const text = await response.text();
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Invalid JSON:', text);
+                    throw new Error('Respons server bukan JSON yang valid');
+                }
             } catch (err) {
                 console.error('API Error:', err);
                 return { success: false, message: 'Koneksi gagal: ' + err.message };
@@ -496,7 +504,7 @@
                 showDashboard();
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `Selamat datang, ${res.user.username}!`, showConfirmButton: false, timer: 2000 });
             } else {
-                Swal.fire('Login Gagal', res.message, 'error');
+                Swal.fire('Login Gagal', res.message || 'Email atau password salah', 'error');
             }
         }
 
@@ -515,12 +523,12 @@
             const res = await callAPI('register', { data });
             btn.innerHTML = 'DAFTAR SEKARANG'; btn.disabled = false;
             if(res.success) {
-                Swal.fire('Pendaftaran Berhasil', res.message, 'success').then(() => {
+                Swal.fire('Pendaftaran Berhasil', 'Silakan login dengan akun Anda.', 'success').then(() => {
                     document.getElementById('logEmail').value = data.email;
                     toggleAuth(false);
                 });
             } else { 
-                Swal.fire('Gagal', res.message, 'error'); 
+                Swal.fire('Gagal', res.message || 'Pendaftaran gagal', 'error'); 
             }
         }
 
